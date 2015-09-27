@@ -45,9 +45,10 @@ libBigWig.so: $(OBJS:.o=.pico)
 
 test/test: libBigWig.a
 	gcc -o $@ -I. $(CFLAGS) test/test.c libBigWig.a -lcurl -lz -lm
-	./test/test test/test.bw
 
 test: test/test
+	./test/test test/test.bw
+	./test/test http://127.0.0.1/wgEncodeCrgMapabilityAlign50mer.bigWig
 
 clean:
 	rm -f *.o libBigWig.a libBigWig.so *.pico test/test

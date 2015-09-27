@@ -50,50 +50,6 @@ int bwInit(size_t defaultBufSize, int nFetchIterations, unsigned int nSeconds) {
     return 0;
 }
 
-//bigWigIntervalQuery
-/*
-double* bwGetValues(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end) {
-    if(end <= start) return NULL;
-    if(!chrom) return NULL;
-    if(!fp) return NULL;
-    uint32_t i, nBlocks;
-    uint64_t *blocks;
-    double *o = malloc(sizeof(double)*(end-start));
-    if(!o) return NULL;
-
-    for(i=0; i<end-start; i++) o[i] = strtod("NaN", NULL);
-
-    blocks = bwGetOverlappingBlocks(fp, chrom, start, end, &nBlocks);
-    if((!blocks) || nBlocks == 0) {
-        fprintf(stderr, "[bwGetValues] No overlapping blocks\n");
-        free(o);
-        return NULL;
-    }
-*/
-
-    //get a list of overlapping blocks bbiOverlappingBlocks()
-    /*
-        bbiOverlappingBlocks()
-          gets the chromosome ID, then
-          \-> cirTreeFindOverlappingBlocks()
-            \-> rFindOverlappingBlocks()
-              \-> Store the blocks in memory as they're processed so we don't have to download again and again
-    */
-/*
-    //Iterate through the blocks
-        //Decompress if relevant zUncompress(), which is a wrapper around zlib's uncompress
-        //Get the values in the block, which could be in fixed or variable steps
-
-    return o;
-}
-*/
-
-//bigWigSummaryArray
-/*
-bwValues *bwGetStats(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end, enum type, uint32_t nBins) {
-}
-*/
-
 //This should be called before quiting, to release memory acquired by curl
 void bwCleanup() {
     curl_global_cleanup();

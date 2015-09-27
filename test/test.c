@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    if(bwInit(8*1024*1024, 10, 2) != 0) {
+    if(bwInit(1<<17, 10, 2) != 0) {
         fprintf(stderr, "Received an error in bwInit\n");
         return 1;
     }
@@ -138,6 +138,11 @@ int main(int argc, char *argv[]) {
 
     printf("chr1:0-100\n");
     intervals = bwGetValues(fp, "chr1", 0, 100, 0);
+    printIntervals(intervals,0);
+    bwDestroyOverlappingIntervals(intervals);
+
+    printf("1:10000000-10000100\n");
+    intervals = bwGetValues(fp, "1", 10000000, 10000100, 0);
     printIntervals(intervals,0);
     bwDestroyOverlappingIntervals(intervals);
 

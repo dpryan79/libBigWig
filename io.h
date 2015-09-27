@@ -40,6 +40,7 @@ typedef struct {
     size_t bufSize; /**<The size of the buffer.*/
     size_t bufLen; /**<The actual size of the buffer used.*/
     enum bigWigFile_type_enum type; /**<The connection type*/
+    char *fname; /**<Only needed for remote connections. The original URL/filename requested, since we need to make multiple connections.*/
 } URL_t;
 
 /*!
