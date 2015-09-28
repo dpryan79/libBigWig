@@ -79,7 +79,9 @@ void printIntervals(bwOverlappingIntervals_t *ints, uint32_t start) {
     uint32_t i;
     if(!ints) return;
     for(i=0; i<ints->l; i++) {
-        if(ints->start) {
+        if(ints->start && ints->end) {
+            printf("Interval %"PRIu32"\t%"PRIu32"-%"PRIu32": %f\n",i, ints->start[i], ints->end[i], ints->value[i]);
+        } else if(ints->start) {
             printf("Interval %"PRIu32"\t%"PRIu32"-%"PRIu32": %f\n",i, ints->start[i], ints->start[i]+1, ints->value[i]);
         } else {
             printf("Interval %"PRIu32"\t%"PRIu32"-%"PRIu32": %f\n",i, start+i, start+i+1, ints->value[i]);
@@ -138,11 +140,6 @@ int main(int argc, char *argv[]) {
 
     printf("chr1:0-100\n");
     intervals = bwGetValues(fp, "chr1", 0, 100, 0);
-    printIntervals(intervals,0);
-    bwDestroyOverlappingIntervals(intervals);
-
-    printf("1:10000000-10000100\n");
-    intervals = bwGetValues(fp, "1", 10000000, 10000100, 0);
     printIntervals(intervals,0);
     bwDestroyOverlappingIntervals(intervals);
 

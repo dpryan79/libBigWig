@@ -43,15 +43,19 @@ libBigWig.a: $(OBJS)
 libBigWig.so: $(OBJS:.o=.pico)
 	$(CC) -shared $(LDFLAGS) -o $@ $(OBJS:.o=.pico) $(LDLIBS) -lcurl
 
-test/test: libBigWig.a
-	gcc -o $@ -I. $(CFLAGS) test/test.c libBigWig.a -lcurl -lz -lm
+test/testLocal: libBigWig.a
+	gcc -o $@ -I. $(CFLAGS) test/testLocal.c libBigWig.a -lcurl -lz -lm
 
-test: test/test
-	./test/test test/test.bw
-	./test/test http://127.0.0.1/wgEncodeCrgMapabilityAlign50mer.bigWig
+test/testHTTPUCSC: libBigWig.a
+	gcc -o $@ -I. $(CFLAGS) test/testHTTPUCSC.c libBigWig.a -lcurl -lz -lm
+
+test: test/testLocal test/testHTTPUCSC
+	./test/testLocal test/test.bw
+	./test/testHTTPUCSC http://hgdownload-test.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeCrgMapabilityAlign50mer.bigWig
+#	./test/test /data/repository/organisms/GRCh37_ensembl/ENCODE/wgEncodeCrgMapabilityAlign50mer.bigWig
 
 clean:
-	rm -f *.o libBigWig.a libBigWig.so *.pico test/test
+	rm -f *.o libBigWig.a libBigWig.so *.pico test/testLocal test/testHTTPUCSC
 
 install: libBigWig.a
 	install libBigWig.a $(prefix)/lib

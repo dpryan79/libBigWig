@@ -1,4 +1,5 @@
 *.swp
 *.o
 *.a
-test/test
+test/testLocal
+test/testHTTPUCSC

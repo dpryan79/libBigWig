@@ -318,7 +318,7 @@ static double intCoverage(bwOverlappingIntervals_t* ints, uint32_t start, uint32
         o += end_use - start_use;
     }
 
-    return o;
+    return o/(end-start);
 }
 
 //Returns NULL on error, otherwise a double* that needs to be free()d
@@ -361,7 +361,7 @@ double *bwStatsFromZoom(bigWigFile_t *fp, int32_t level, uint32_t tid, uint32_t 
             break;
         case 4:
             //cov
-            output[i] = blockCoverage(fp, blocks);
+            output[i] = blockCoverage(fp, blocks)/span;
             break;
         default:
             goto error;

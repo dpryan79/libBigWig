@@ -186,7 +186,9 @@ error:
 //Returns NULL on error, otherwise the merged lists
 static bwOverlapBlock_t *mergeOverlapBlocks(bwOverlapBlock_t *b1, bwOverlapBlock_t *b2) {
     uint64_t i,j;
+    if(!b2) return b1;
     if(!b2->n) return b1;
+    if(!b1->n) return b2;
     b1->n += b2->n;
     b1->offset = realloc(b1->offset, sizeof(uint64_t) * (b1->n+b2->n));
     if(!b1->offset) goto error;
@@ -458,7 +460,11 @@ bwOverlappingIntervals_t *bwGetValues(bigWigFile_t *fp, char *chrom, uint32_t st
         }
     } else {
         n = 0;
-        for(i=0; i<intermediate->l; i++) n += intermediate->end[i]-intermediate->start[i];
+        for(i=0; i<intermediate->l; i++) {
+            if(intermediate->start[i] < start) intermediate->start[i] = start;
+            if(intermediate->end[i] > end) intermediate->end[i] = end;
+            n += intermediate->end[i]-intermediate->start[i];
+        }
         output->l = n;
         output->start = malloc(sizeof(uint32_t)*n);
         if(!output->start) goto error;
