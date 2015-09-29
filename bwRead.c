@@ -34,19 +34,17 @@ size_t bwRead(void *data, size_t sz, size_t nmemb, bigWigFile_t *fp) {
     return sz;
 }
 
-//Initializes global values and curl
+//Initializes curl and sets global variables
 //Returns 0 on success and 1 on error
 //This should be called only once and bwCleanup() must be called when finished.
-int bwInit(size_t defaultBufSize, int nFetchIterations, unsigned int nSeconds) {
-    //call curl_global_init()
+int bwInit(size_t defaultBufSize) {
     //set the buffer size, number of iterations, sleep time between iterations, etc.
+    GLOBAL_DEFAULTBUFFERSIZE = defaultBufSize;
+
+    //call curl_global_init()
     CURLcode rv;
     rv = curl_global_init(CURL_GLOBAL_ALL);
     if(rv != CURLE_OK) return 1;
-
-    GLOBAL_DEFAULTBUFFERSIZE = defaultBufSize;
-    GLOBAL_DEFAULTNFETCHITERATIONS = nFetchIterations;
-    GLOBAL_DEFAULTNSECONDS = nSeconds;
     return 0;
 }
 
@@ -271,13 +269,13 @@ void bwClose(bigWigFile_t *fp) {
     free(fp);
 }
 
-bigWigFile_t *bwOpen(char *fname) {
+bigWigFile_t *bwOpen(char *fname, CURLcode (*callBack) (CURL*)) {
     bigWigFile_t *bwg = calloc(1, sizeof(bigWigFile_t));
     if(!bwg) {
         fprintf(stderr, "[bwOpen] Couldn't allocate space to create the output object!\n");
         return NULL;
     }
-    bwg->URL = urlOpen(fname);
+    bwg->URL = urlOpen(fname, *callBack);
     if(!bwg->URL) goto error;
 
     //Attempt to read in the fixed header

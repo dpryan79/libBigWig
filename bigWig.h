@@ -109,17 +109,16 @@ typedef struct {
 } bwOverlappingIntervals_t;
 
 /*!
- * @brief Sets up global variables and initializes curl. This *MUST* be called before other functions.
+ * @brief Initializes curl and global variables. This *MUST* be called before other functions (at least if you want to connect to remote files).
+ * For remote file, curl must be initialized and regions of a file read into an internal buffer. If the buffer is too small then an excessive number of connections will be made. If the buffer is too large than more data than required is fetched. 128KiB is likely sufficient for most needs.
+ * @param bufSize The internal buffer size used for remote connection.
  * @see bwCleanup
- * @param defaultBufSize The buffer size (in bytes) to use for remote connections.
- * @param nFetchIterations The number of times to attempt to connect to remote files before failing.
- * @param nSeconds The amount of time to sleep between remote connection attempts.
  * @return 0 on success and 1 on error.
  */
-int bwInit(size_t defaultBufSize, int nFetchIterations, unsigned int nSeconds);
+int bwInit(size_t bufSize);
 
 /*!
- * @brief The counterpart to bwInit, this cleans up curl and other global space.
+ * @brief The counterpart to bwInit, this cleans up curl.
  * @see bwInit
  */
 void bwCleanup(void);
@@ -128,9 +127,10 @@ void bwCleanup(void);
  * @brief Opens a local or remote bigWig file.
  * This will open a local or remote bigWig file.
  * @param fname The file name or URL (http, https, and ftp are supported)
+ * @param callBack An optional user-supplied function. This is applied to remote connections so users can specify things like proxy and password information. See `test/testRemote` for an example.
  * @return A bigWigFile_t * on success and NULL on error.
  */
-bigWigFile_t *bwOpen(char *fname);
+bigWigFile_t *bwOpen(char *fname, CURLcode (*callBack)(CURL*));
 
 /*!
  * @brief Closes a bigWigFile_t and frees up allocated memory

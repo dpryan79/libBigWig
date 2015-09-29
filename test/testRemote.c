@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
+//Print overly verbose header information
 void bwPrintHdr(bigWigFile_t *bw) {
     uint64_t i;
     printf("Version:    %"PRIu16"\n", bw->hdr->version);
@@ -89,6 +90,17 @@ void printIntervals(bwOverlappingIntervals_t *ints, uint32_t start) {
     }
 }
 
+//This is an example call back function
+CURLcode callBack(CURL *curl) {
+    CURLcode rv;
+
+    rv = curl_easy_setopt(curl, CURLOPT_USERNAME, "anonymous");
+    if(rv != CURLE_OK) return rv;
+
+    rv = curl_easy_setopt(curl, CURLOPT_PASSWORD, "libBigWig@github.com");
+    return rv;
+}
+
 int main(int argc, char *argv[]) {
     bigWigFile_t *fp = NULL;
     bwOverlappingIntervals_t *intervals = NULL;
@@ -98,12 +110,12 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    if(bwInit(1<<17, 10, 2) != 0) {
+    if(bwInit(1<<17) != 0) {
         fprintf(stderr, "Received an error in bwInit\n");
         return 1;
     }
 
-    fp = bwOpen(argv[1]);
+    fp = bwOpen(argv[1], callBack);
     if(!fp) {
         fprintf(stderr, "An error occured while opening %s\n", argv[1]);
         return 1;

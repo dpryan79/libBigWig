@@ -46,18 +46,18 @@ libBigWig.so: $(OBJS:.o=.pico)
 test/testLocal: libBigWig.a
 	gcc -o $@ -I. $(CFLAGS) test/testLocal.c libBigWig.a -lcurl -lz -lm
 
-test/testHTTPUCSC: libBigWig.a
-	gcc -o $@ -I. $(CFLAGS) test/testHTTPUCSC.c libBigWig.a -lcurl -lz -lm
+test/testRemote: libBigWig.a
+	gcc -o $@ -I. $(CFLAGS) test/testRemote.c libBigWig.a -lcurl -lz -lm
 
-test: test/testLocal test/testHTTPUCSC
+test: test/testLocal test/testRemote
 	./test/testLocal test/test.bw
-	./test/testHTTPUCSC http://hgdownload-test.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeCrgMapabilityAlign50mer.bigWig
-#	./test/testHTTPUCSC ftp://localhost/wgEncodeCrgMapabilityAlign50mer.bigWig
-#The last test will obviously not work remotely
+	./test/testRemote ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeCrgMapabilityAlign50mer.bigWig
+	./test/testRemote http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeCrgMapabilityAlign50mer.bigWig
 
 clean:
-	rm -f *.o libBigWig.a libBigWig.so *.pico test/testLocal test/testHTTPUCSC
+	rm -f *.o libBigWig.a libBigWig.so *.pico test/testLocal test/testRemote
 
 install: libBigWig.a
 	install libBigWig.a $(prefix)/lib
+	install libBigWig.so $(prefix)/lib
 	install bigWig.h $(prefix)/include

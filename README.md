@@ -27,7 +27,7 @@ The only functions and structures that end users need to care about are in "bigW
         }
 
         //Open the local/remote file
-        fp = bwOpen(argv[1]);
+        fp = bwOpen(argv[1], NULL);
         if(!fp) {
             fprintf(stderr, "An error occured while opening %s\n", argv[1]);
             return 1;
@@ -63,12 +63,9 @@ The only functions and structures that end users need to care about are in "bigW
    - [ ] Do Kent's tools take block partial overlap with an interval into account when determining statistics?
  - [ ] Test remote files
    - [X] HTTP
-   - [ ] HTTP with authentication
-   - [ ] HTTPS
-   - [ ] HTTPS with a self-signed certificate
+   - [ ] HTTPS (this should work)
+     - [ ] HTTPS with a self-signed certificate (adding `curl_easy_setopt(*handle, CURLOPT_SSL_VERIFYPEER, 0)` to the call back fed to `bwOpen()` should take care of this).
    - [x] FTP
-   - [ ] FTP with non-default login information
-   - [ ] Non-default ports?
-   - [ ] User-defined function to directly deal with curl before `curl_easy_perform()`
- - [ ] `bwInit()` should also set the timeout duration for `select()`.
+   - [x] FTP with non-default login information
+   - [x] User-defined function to directly deal with curl before `curl_easy_perform()`. See `test/testRemote` for an example. The same call back method can be used to set ports and proxy information.
  - [ ] Write methods for creating bigWig files (from bedGraph like input)

@@ -16,42 +16,19 @@ uint64_t getContentLength(URL_t *URL) {
 }
 
 //Fill the buffer, note that URL may be left in an unusable state on error!
-//To do, what happens if a we don't get a 200/206 response?
-//What happens with ftp?
 CURLcode urlFetchData(URL_t *URL) {
-    CURLcode rv = CURLE_AGAIN;
-    size_t len, size;
-    int i = 0;
+    CURLcode rv;
+    size_t len;
 
     if(URL->filePos != -1) URL->filePos += URL->bufLen;
     else URL->filePos = 0;
 
-    //Get the first chunk of possibly many
-    while(rv == CURLE_AGAIN) {
-        rv = curl_easy_recv(URL->x.curl, URL->memBuf+URL->bufLen, URL->bufSize, &len);
-        if(rv == CURLE_OK) {
-            if(URL->bufLen == 0) {
-                URL->bufPos = 0;
-                size = getContentLength(URL);
-            }
-            URL->bufLen += len;
-            if((URL->bufLen < URL->bufSize) && (URL->bufPos+URL->bufLen-1 < size)) {
-                 rv = CURLE_AGAIN;
-                 continue;
-            }
-            return CURLE_OK;
-        } else if(rv == CURLE_AGAIN) {
-            if(i>=GLOBAL_DEFAULTNFETCHITERATIONS) return rv;
-            i++;
-            sleep(GLOBAL_DEFAULTNSECONDS);
-            continue;
-        }
-        return rv;
-    }
+    rv = curl_easy_recv(URL->x.curl, URL->memBuf+URL->bufLen, URL->bufSize, &len);
     return rv;
 }
 
 //Read data into a buffer, ideally from a buffer already in memory
+//The loop is likely no longer needed.
 size_t url_fread(void *obuf, size_t obufSize, URL_t *URL) {
     size_t remaining = obufSize;
     void *p = obuf;
@@ -147,7 +124,7 @@ CURLcode urlSeek(URL_t *URL, size_t pos) {
     }
 }
 
-URL_t *urlOpen(char *fname) {
+URL_t *urlOpen(char *fname, CURLcode (*callBack)(CURL*)) {
     URL_t *URL = calloc(1, sizeof(URL_t));
     if(!URL) return NULL;
     char *url = NULL, *req = NULL;
@@ -209,6 +186,13 @@ URL_t *urlOpen(char *fname) {
         if(curl_easy_setopt(URL->x.curl, CURLOPT_WRITEDATA, (void*)URL) != CURLE_OK) {
             fprintf(stderr, "[urlOpen] Couldn't set CURLOPT_WRITEDATA!\n");
             goto error;
+        }
+        if(callBack) {
+            code = callBack(URL->x.curl);
+            if(code != CURLE_OK) {
+                fprintf(stderr, "[urlOpen] The user-supplied call back function returned an error: %s\n", curl_easy_strerror(code));
+                goto error;
+            }
         }
         code = curl_easy_perform(URL->x.curl);
         if(code != CURLE_OK) {

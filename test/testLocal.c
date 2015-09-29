@@ -98,12 +98,12 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    if(bwInit(1<<17, 10, 2) != 0) {
+    if(bwInit(1<<17) != 0) {
         fprintf(stderr, "Received an error in bwInit\n");
         return 1;
     }
 
-    fp = bwOpen(argv[1]);
+    fp = bwOpen(argv[1], NULL);
     if(!fp) {
         fprintf(stderr, "An error occured while opening %s\n", argv[1]);
         return 1;

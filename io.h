@@ -7,14 +7,6 @@
  * The size of the buffer used for remote files.
  */
 size_t GLOBAL_DEFAULTBUFFERSIZE;
-/*!
- * For remote files, the number of connection attempts to make before failing.
- */
-int GLOBAL_DEFAULTNFETCHITERATIONS;
-/*!
- * For remote files, the number of seconds to pause between connection attempts.
- */
-unsigned int GLOBAL_DEFAULTNSECONDS;
 
 /*!
  * The enumerated values that indicate the connection type used to access a file.
@@ -63,6 +55,9 @@ size_t urlRead(URL_t *URL, void *buf, size_t bufSize);
  * 
  *  For local files, this will set the file position indicator for the file pointer to the desired position. For remote files, it sets the position to start downloading data for the next urlRead(). Note that for remote files that running urlSeek() with a pos within the current buffer will simply modify the internal offset.
  *
+ *  @param URL A URL_t * pointing to a valid opened file or remote URL.
+ *  @param pos The position to seek to.
+ *
  *  @return CURLE_OK on success and a different CURLE_XXX on error. For local files, the error return value is always CURLE_FAILED_INIT
  */
 CURLcode urlSeek(URL_t *URL, size_t pos);
@@ -76,14 +71,19 @@ CURLcode urlSeek(URL_t *URL, size_t pos);
  *
  *  Note that you **must** run urlClose() on this when finished. However, you would typically just use bwOpen() rather than directly calling this function.
  *
+ * @param fname The file name or URL to open.
+ * @param callBack An optional user-supplied function. This is applied to remote connections so users can specify things like proxy and password information.
+ *
  *  @return A URL_t * or NULL on error.
  */
-URL_t *urlOpen(char *fname);
+URL_t *urlOpen(char *fname, CURLcode (*callBack)(CURL*));
 
 /*!
  *  @brief Close a local/remote file
  *
  *  This will perform the cleanup required on a URL_t*, releasing memory as needed.
+ *
+ *  @param URL A URL_t * pointing to a valid opened file or remote URL.
  *
  *  @warning URL will no longer point to a valid location in memory!
  */

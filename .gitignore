@@ -1,5 +1,7 @@
 *.swp
 *.o
+*.pico
+*.so
 *.a
 test/testLocal
-test/testHTTPUCSC
+test/testRemote
