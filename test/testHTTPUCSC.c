@@ -124,54 +124,64 @@ int main(int argc, char *argv[]) {
     bwDestroyOverlappingIntervals(intervals);
 
     stats = bwStats(fp, "chr1", 10000000, 10000100, 1, mean);
-    assert(stats);
-    printf("chr1:10000000-10000100 mean: %f\n", stats[0]);
-    free(stats);
+    if(stats) {
+        printf("chr1:10000000-10000100 mean: %f\n", stats[0]);
+        free(stats);
+    }
 
     stats = bwStats(fp, "chr1", 10000000, 10000100, 2, mean);
-    assert(stats);
-    printf("chr1:10000000-10000100 mean: %f %f\n", stats[0], stats[1]);
-    free(stats);
+    if(stats) {
+        printf("chr1:10000000-10000100 mean: %f %f\n", stats[0], stats[1]);
+        free(stats);
+    }
 
     stats = bwStats(fp, "chr1", 10000000, 10000100, 1, dev);
-    assert(stats);
-    printf("chr1:10000000-10000100 std. dev.: %f\n", stats[0]);
-    free(stats);
+    if(stats) {
+        printf("chr1:10000000-10000100 std. dev.: %f\n", stats[0]);
+        free(stats);
+    }
 
     stats = bwStats(fp, "chr1", 10000000, 10000100, 2, dev);
-    assert(stats);
-    printf("chr1:10000000-10000100 std. dev.: %f %f\n", stats[0], stats[1]);
-    free(stats);
+    if(stats) {
+        printf("chr1:10000000-10000100 std. dev.: %f %f\n", stats[0], stats[1]);
+        free(stats);
+    }
 
     stats = bwStats(fp, "chr1", 10000000, 10000100, 1, min);
-    assert(stats);
-    printf("chr1:10000000-10000100 min: %f\n", stats[0]);
-    free(stats);
+    if(stats) {
+        printf("chr1:10000000-10000100 min: %f\n", stats[0]);
+        free(stats);
+    }
 
     stats = bwStats(fp, "chr1", 10000000, 10000100, 2, min);
-    assert(stats);
-    printf("chr1:10000000-10000100 min: %f %f\n", stats[0], stats[1]);
-    free(stats);
+    if(stats) {
+        printf("chr1:10000000-10000100 min: %f %f\n", stats[0], stats[1]);
+        free(stats);
+    }
 
     stats = bwStats(fp, "chr1", 10000000, 10000100, 1, max);
-    assert(stats);
-    printf("chr1:10000000-10000100 max: %f\n", stats[0]);
-    free(stats);
+    if(stats) {
+        printf("chr1:10000000-10000100 max: %f\n", stats[0]);
+        free(stats);
+    }
 
     stats = bwStats(fp, "chr1", 10000000, 10000100, 2, max);
-    assert(stats);
-    printf("chr1:10000000-10000100 max: %f %f\n", stats[0], stats[1]);
-    free(stats);
+    if(stats) {
+        printf("chr1:10000000-10000100 max: %f %f\n", stats[0], stats[1]);
+        free(stats);
+    }
 
     stats = bwStats(fp, "chr1", 10000000, 10000100, 1, cov);
-    assert(stats);
-    printf("chr1:10000000-10000100 coverage: %f\n", stats[0]);
-    free(stats);
+    if(stats) {
+        printf("chr1:10000000-10000100 coverage: %f\n", stats[0]);
+        free(stats);
+    }
 
     stats = bwStats(fp, "chr1", 10000000, 10000100, 2, cov);
-    assert(stats);
-    printf("chr1:10000000-10000100 coverage: %f %f\n", stats[0], stats[1]);
-    free(stats);
+    if(stats) {
+        printf("chr1:10000000-10000100 coverage: %f %f\n", stats[0], stats[1]);
+        free(stats);
+    }
 
     bwClose(fp);
     bwCleanup();

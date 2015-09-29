@@ -6,46 +6,12 @@
 #include "io.h"
 #include <inttypes.h>
 
-int waitForReady(URL_t *URL, int recv, long timeout) {
-    fd_set ifd, ofd, efd;
-    struct timeval tv;
-    curl_socket_t fd;
-    long sockextr;
-    CURLcode res;
-
-    tv.tv_sec = timeout/1000;
-    tv.tv_usec = (timeout % 1000) * 1000;
-
-    FD_ZERO(&ifd);
-    FD_ZERO(&ofd);
-    FD_ZERO(&efd);
-
-    res = curl_easy_getinfo(URL->x.curl, CURLINFO_LASTSOCKET, &sockextr);
-    if(CURLE_OK != res) {
-      fprintf(stderr, "[waitForReady] Getting CURLINFO_LASTSOCKET returned the following error: %s\n", curl_easy_strerror(res));
-      return 1;
-    }
-    fd = sockextr;
-
-    FD_SET(fd, &efd);
-    if(recv) FD_SET(fd, &ifd);
-    else FD_SET(fd, &ofd);
-
-    return select(fd+1, &ifd, &ofd, &efd, &tv);
-}
-
-uint64_t parseHeader(URL_t *URL) {
-    char *p = strstr(URL->memBuf, "Content-Length:");
-    if(!p) return 0;
-    return strtoull(p+strlen("Content-Length: "), NULL, 10);
-}
-
 uint64_t getContentLength(URL_t *URL) {
     double size;
     if(curl_easy_getinfo(URL->x.curl, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &size) != CURLE_OK) {
-        return parseHeader(URL);
+        return 0;
     }
-    if(size== -1.0) return parseHeader(URL);
+    if(size== -1.0) return 0;
     return (uint64_t) size;
 }
 
@@ -55,7 +21,6 @@ uint64_t getContentLength(URL_t *URL) {
 CURLcode urlFetchData(URL_t *URL) {
     CURLcode rv = CURLE_AGAIN;
     size_t len, size;
-    char *p;
     int i = 0;
 
     if(URL->filePos != -1) URL->filePos += URL->bufLen;
@@ -68,12 +33,6 @@ CURLcode urlFetchData(URL_t *URL) {
             if(URL->bufLen == 0) {
                 URL->bufPos = 0;
                 size = getContentLength(URL);
-                p = strstr((char*) URL->memBuf, "\r\n\r\n")+4;
-                //Will "p" always be legit? What about FTP?
-                if(p) {
-                    len -= (((void*)p)-URL->memBuf);
-                    URL->memBuf = memmove(URL->memBuf, p, len);
-                }
             }
             URL->bufLen += len;
             if((URL->bufLen < URL->bufSize) && (URL->bufPos+URL->bufLen-1 < size)) {
@@ -99,32 +58,23 @@ size_t url_fread(void *obuf, size_t obufSize, URL_t *URL) {
     CURLcode rv;
     while(remaining) {
         if(!URL->bufLen) {
-            if(!waitForReady(URL, 1, 600)) {
-                fprintf(stderr, "[url_fread] (A) waitForReady returned 1!\n");
-                return 0;
-            }
             rv = urlFetchData(URL);
             if(rv != CURLE_OK) {
-                fprintf(stderr, "[url_fread] urlFetchData returned %s\n", curl_easy_strerror(rv));
+                fprintf(stderr, "[url_fread] urlFetchData (A) returned %s\n", curl_easy_strerror(rv));
                 return 0;
             }  
         } else if(URL->bufLen < URL->bufPos + remaining) { //Copy the remaining buffer and reload the buffer as needed
-            p = memmove(p, URL->memBuf+URL->bufPos, URL->bufLen - URL->bufPos);
+            p = memcpy(p, URL->memBuf+URL->bufPos, URL->bufLen - URL->bufPos);
             if(!p) return 0;
             p += URL->bufLen - URL->bufPos;
             remaining -= URL->bufLen - URL->bufPos;
-            //Load more into the buffer, since we're likely to need the next segment
-            if(!waitForReady(URL, 1, 600)) {
-                fprintf(stderr, "[url_fread] (B) waitForReady returned 1!\n");
-                return 0;
-            }
             rv = urlFetchData(URL);
             if(rv != CURLE_OK) {
-                fprintf(stderr, "[url_fread] urlFetchData returned %s\n", curl_easy_strerror(rv));
+                fprintf(stderr, "[url_fread] urlFetchData (B) returned %s\n", curl_easy_strerror(rv));
                 return 0;
             }
         } else {
-            p = memmove(p, URL->memBuf+URL->bufPos, remaining);
+            p = memcpy(p, URL->memBuf+URL->bufPos, remaining);
             if(!p) return 0;
             URL->bufPos += remaining;
             remaining = 0;
@@ -143,40 +93,28 @@ size_t urlRead(URL_t *URL, void *buf, size_t bufSize) {
     }
 }
 
-//This doesn't currently work with FTP files!
-char *getRequest(char *fname, uint64_t start, uint64_t len, enum bigWigFile_type_enum type) {
-    char *p1, *p2, *request;
-    switch(type) {
-    case BWG_HTTP :
-        p1 = fname + 7;
-        break;
-    case BWG_HTTPS :
-        p1 = fname + 8;
-        break;
-    default :
-        fprintf(stderr, "[getRequest] ftp isn't yet supported\n");
-        return NULL;
+size_t bwFillBuffer(void *inBuf, size_t l, size_t nmemb, void *pURL) {
+    URL_t *URL = (URL_t*) pURL;
+    void *p = URL->memBuf;
+    size_t copied = l*nmemb;
+    if(!p) return 0;
+
+    p += URL->bufLen;
+    if(l*nmemb > URL->bufSize - URL->bufPos) { //We received more than we can store!
+        copied = URL->bufSize - URL->bufLen;
     }
-    p2 = strchr(p1, '/');
-    if(!p2) return NULL;
+    memcpy(p, inBuf, copied);
+    URL->bufLen += copied;
 
-    *(p2++) = '\0';
-
-    request = malloc(strlen(p1) + strlen(p2) + 33 + 1000);
-    if(!request) return NULL;
-
-    sprintf(request, "GET /%s HTTP/1.0\r\nHost: %s\r\nRange: bytes=%"PRIu64"-%"PRIu64"\r\n\r\n", p2, p1, start, start+len-1);
-    *(--p2) = '/'; //Don't forget to replace the "/"!
-
-    return request;
+    if(!URL->memBuf) return 0; //signal error
+    return copied;
 }
 
 //Seek to an arbitrary location, returning a CURLcode
 //Note that a local file returns CURLE_OK on success or CURLE_FAILED_INIT on any error;
 CURLcode urlSeek(URL_t *URL, size_t pos) {
-    char range[1024], *req = NULL;
+    char range[1024];
     CURLcode rv;
-    size_t l;
 
     if(URL->type == BWG_FILE) {
         if(fseek(URL->x.fp, pos, SEEK_SET) == 0) {
@@ -189,6 +127,7 @@ CURLcode urlSeek(URL_t *URL, size_t pos) {
         if(pos < URL->filePos || pos >= URL->filePos+URL->bufSize) {
             URL->filePos = pos;
             URL->bufLen = 0; //Otherwise, filePos will get incremented on the next read!
+            URL->bufPos = 0;
             //Maybe this works for FTP?
             sprintf(range,"%"PRIu64"-%"PRIu64, pos, pos+URL->bufSize-1);
             rv = curl_easy_setopt(URL->x.curl, CURLOPT_RANGE, range);
@@ -199,18 +138,7 @@ CURLcode urlSeek(URL_t *URL, size_t pos) {
             rv = curl_easy_perform(URL->x.curl);
             if(rv != CURLE_OK) {
                 fprintf(stderr, "[urlSeek] curl_easy_perform received an error!\n");
-                return rv;
             }
-            if(!waitForReady(URL, 0, 600)) { //1 minute timeout, this should be a global
-                return CURLE_FAILED_INIT; //Arbitrary
-            }
-            req = getRequest(URL->fname, pos, URL->bufSize, URL->type);
-            if(!req) {
-                fprintf(stderr, "[urlSeek] Somehow, we couldn't construct the request?!?\n");
-                return CURLE_FAILED_INIT;
-            }
-            rv = curl_easy_send(URL->x.curl, req, strlen(req), &l);
-            free(req);
             return rv;
         } else {
             URL->bufPos = pos-URL->filePos;
@@ -222,9 +150,7 @@ CURLcode urlSeek(URL_t *URL, size_t pos) {
 URL_t *urlOpen(char *fname) {
     URL_t *URL = calloc(1, sizeof(URL_t));
     if(!URL) return NULL;
-    URL->filePos = -1;
-    char *url = NULL, *req = NULL, *p;
-    size_t l;
+    char *url = NULL, *req = NULL;
     CURLcode code;
     char range[1024];
 
@@ -238,6 +164,7 @@ URL_t *urlOpen(char *fname) {
 
     //local file?
     if(URL->type == BWG_FILE) {
+        URL->filePos = -1; //This signals that nothing has been read
         URL->x.fp = fopen(fname, "rb");
         if(!(URL->x.fp)) {
             free(URL);
@@ -245,24 +172,6 @@ URL_t *urlOpen(char *fname) {
             return NULL;
         }
     } else {
-        //Construct the URL/file name needed for the request
-        url = strdup(fname);
-        if(!url) {
-            fprintf(stderr, "[urlOpen] Not enough free memory to make the url!\n");
-            return NULL;
-        }
-        p = strchr(url+8,'/');
-        if(!p) {
-            //There's no "/" in the file name, this can't be correct
-            fprintf(stderr, "[urlOpen] The URL must contain a file name!\n");
-            return NULL;
-        }
-        *p = '\0';
-        req = getRequest(URL->fname, 0, GLOBAL_DEFAULTBUFFERSIZE, URL->type);
-        if(!req) {
-            free(url);
-            fprintf(stderr, "[urlOpen] Couldn't construct the URL!\n");
-        }
         //Remote file, set up the memory buffer and get CURL ready
         URL->memBuf = malloc(GLOBAL_DEFAULTBUFFERSIZE);
         if(!(URL->memBuf)) {
@@ -282,13 +191,8 @@ URL_t *urlOpen(char *fname) {
             goto error;
         }
         //Set the URL
-        if(curl_easy_setopt(URL->x.curl, CURLOPT_URL, url) != CURLE_OK) {
+        if(curl_easy_setopt(URL->x.curl, CURLOPT_URL, fname) != CURLE_OK) {
             fprintf(stderr, "[urlOpen] Couldn't set CURLOPT_URL!\n");
-            goto error;
-        }
-        //We don't want to automatically load the whole file...
-        if(curl_easy_setopt(URL->x.curl, CURLOPT_CONNECT_ONLY, 1L) != CURLE_OK) {
-            fprintf(stderr, "[urlOpen] Couldn't set CURLOPT_CONNECT_ONLY!\n");
             goto error;
         }
         //Set the range, which doesn't do anything for HTTP
@@ -297,17 +201,18 @@ URL_t *urlOpen(char *fname) {
             fprintf(stderr, "[urlOpen] Couldn't set CURLOPT_RANGE (%s)!\n", range);
             goto error;
         }
-        if(curl_easy_perform(URL->x.curl) != CURLE_OK) {
-            fprintf(stderr, "[urlOpen] curl_easy_perform received an error!\n");
+        //Set the callback info, which means we no longer need to directly deal with sockets and header!
+        if(curl_easy_setopt(URL->x.curl, CURLOPT_WRITEFUNCTION, bwFillBuffer) != CURLE_OK) {
+            fprintf(stderr, "[urlOpen] Couldn't set CURLOPT_WRITEFUNCTION!\n");
             goto error;
         }
-        //Wait for the socket to become active
-        if(!waitForReady(URL, 0, 600)) { //1 minute timeout, this should be a global
+        if(curl_easy_setopt(URL->x.curl, CURLOPT_WRITEDATA, (void*)URL) != CURLE_OK) {
+            fprintf(stderr, "[urlOpen] Couldn't set CURLOPT_WRITEDATA!\n");
             goto error;
         }
-        code = curl_easy_send(URL->x.curl, req, strlen(req), &l);
+        code = curl_easy_perform(URL->x.curl);
         if(code != CURLE_OK) {
-            fprintf(stderr, "[urlOpen] The initial curl_easy_send had an error: %s\n", curl_easy_strerror(code));
+            fprintf(stderr, "[urlOpen] curl_easy_perform received an error: %s\n", curl_easy_strerror(code));
             goto error;
         }
     }

@@ -52,7 +52,8 @@ test/testHTTPUCSC: libBigWig.a
 test: test/testLocal test/testHTTPUCSC
 	./test/testLocal test/test.bw
 	./test/testHTTPUCSC http://hgdownload-test.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeCrgMapabilityAlign50mer.bigWig
-#	./test/test /data/repository/organisms/GRCh37_ensembl/ENCODE/wgEncodeCrgMapabilityAlign50mer.bigWig
+#	./test/testHTTPUCSC ftp://localhost/wgEncodeCrgMapabilityAlign50mer.bigWig
+#The last test will obviously not work remotely
 
 clean:
 	rm -f *.o libBigWig.a libBigWig.so *.pico test/testLocal test/testHTTPUCSC
