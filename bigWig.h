@@ -2,6 +2,30 @@
 #include "bwValues.h"
 #include <inttypes.h>
 
+/*! \mainpage libBigWig
+ *
+ * \section Introduction
+ *
+ * libBigWig is a C library for parsing local/remote bigWig files. This is similar to Kent's library from UCSC, except 
+ *  * The license is much more liberal
+ *  * This code doesn't call `exit()` on error, thereby killing the calling application.
+ *
+ * External files are accessed using [curl](http://curl.haxx.se/).
+ *
+ * Please submit issues and pull requests [here](https://github.com/dpryan79/libBigWig).
+ *
+ * \section Compilation
+ *
+ * Assuming you already have the curl libraries installed (not just the curl binary!):
+ *
+ *     make install prefix=/some/path
+ *
+ * \section Examples
+ * 
+ * Please see [README.md](README.md) and the files under `test/` for examples.
+ */
+ 
+
 /*! \file bigWig.h
  *
  * These are the functions and structured that should be used by external users. While I don't particularly recommend dealing with some of the structures (e.g., a bigWigHdr_t), they're described here in case you need them.
