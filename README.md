@@ -1,4 +1,4 @@
-N.B., this is still very much under development and the results are not guaranteed. Local and HTTP-based connections should work, though.
+N.B., this is still very much under development and the results are not guaranteed. Local and remote connections should work, though.
 
 A C library for reading/parsing local and remote BigWig files. While Kent's source code is free to use for these purposes, it's really inappropriate as library code since it has the unfortunate habit of calling `exit()` whenever there's an error. If that's then used inside of something like python then the python interpreter gets killed. This library is aimed at resolving these sorts of issues and should also use more standard things like curl and has a friendlier license to boot.
 
@@ -19,9 +19,7 @@ The only functions and structures that end users need to care about are in "bigW
         }
 
         //Initialize enough space to hold 128KiB (1<<17) of data at a time
-        //Allow up to 10 remote fetching attempts
-        //Allow 2 seconds between fetch attempts
-        if(bwInit(1<<17, 10, 2) != 0) {
+        if(bwInit(1<<17) != 0) {
             fprintf(stderr, "Received an error in bwInit\n");
             return 1;
         }
@@ -69,3 +67,4 @@ The only functions and structures that end users need to care about are in "bigW
    - [x] FTP with non-default login information
    - [x] User-defined function to directly deal with curl before `curl_easy_perform()`. See `test/testRemote` for an example. The same call back method can be used to set ports and proxy information.
  - [ ] Write methods for creating bigWig files (from bedGraph like input)
+ - [ ] Run valgrind on everything
