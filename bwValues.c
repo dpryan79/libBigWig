@@ -189,17 +189,17 @@ static bwOverlapBlock_t *mergeOverlapBlocks(bwOverlapBlock_t *b1, bwOverlapBlock
     if(!b2) return b1;
     if(!b2->n) return b1;
     if(!b1->n) return b2;
+    j = b1->n;
     b1->n += b2->n;
     b1->offset = realloc(b1->offset, sizeof(uint64_t) * (b1->n+b2->n));
     if(!b1->offset) goto error;
     b1->size = realloc(b1->size, sizeof(uint64_t) * (b1->n+b2->n));
     if(!b1->size) goto error;
 
-    for(i=0, j=b1->n; i<b2->n; i++, j++) {
-        b1->offset[j] = b2->offset[i];
-        b1->size[j] = b2->size[i];
+    for(i=0; i<b2->n; i++) {
+        b1->offset[j+i] = b2->offset[i];
+        b1->size[j+i] = b2->size[i];
     }
-    b1->n += b2->n;
     destroyBWOverlapBlock(b2);
     return b1;
 
@@ -373,6 +373,7 @@ bwOverlappingIntervals_t *bwGetOverlappingIntervalsCore(bigWigFile_t *fp, bwOver
 
         //Do stuff (bwgSectionHeadFromMem)
         bwFillDataHdr(&hdr, buf);
+
         p = ((uint32_t*) buf);
         p += 6;
         if(hdr.tid != tid) continue;

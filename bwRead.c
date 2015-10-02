@@ -57,7 +57,7 @@ static bwZoomHdr_t *bwReadZoomHdrs(bigWigFile_t *bw) {
     uint16_t i;
     bwZoomHdr_t *zhdr = malloc(sizeof(bwZoomHdr_t));
     if(!zhdr) return NULL;
-    uint32_t *level = malloc(sizeof(uint32_t) * bw->hdr->nLevels);
+    uint32_t *level = malloc(bw->hdr->nLevels * sizeof(uint64_t));
     if(!level) {
         free(zhdr);
         return NULL;
@@ -88,9 +88,14 @@ static bwZoomHdr_t *bwReadZoomHdrs(bigWigFile_t *bw) {
     zhdr->dataOffset = dataOffset;
     zhdr->indexOffset = indexOffset;
     zhdr->idx = calloc(bw->hdr->nLevels, sizeof(bwRTree_t*));
+    if(!zhdr->idx) goto error;
+
     return zhdr;
 
 error:
+    for(i=0; i<bw->hdr->nLevels; i++) {
+        if(zhdr->idx[i]) bwDestroyIndex(zhdr->idx[i]);
+    }
     free(zhdr);
     free(level);
     free(dataOffset);

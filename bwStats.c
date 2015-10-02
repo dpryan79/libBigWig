@@ -5,18 +5,23 @@
 #include <math.h>
 
 //Returns -1 if there are no applicable levels, otherwise an integer indicating the most appropriate level.
+//Like Kent's library, this divides the desired bin size by 2 to minimize the effect of blocks overlapping multiple bins
 static int32_t determineZoomLevel(bigWigFile_t *fp, int basesPerBin) {
     int32_t out = -1;
+    int64_t diff;
     uint32_t bestDiff = -1;
     uint16_t i;
+
+    basesPerBin/=2;
     for(i=0; i<fp->hdr->nLevels; i++) {
-        if(fp->hdr->zoomHdrs->level[i] <= basesPerBin) {
-            if(fp->hdr->zoomHdrs->level[i] - basesPerBin < bestDiff) {
-                bestDiff = fp->hdr->zoomHdrs->level[i] - basesPerBin;
-                out = i;
-            }
+        diff = basesPerBin - (int64_t) fp->hdr->zoomHdrs->level[i];
+        if(diff >= 0 && diff < bestDiff) {
+            bestDiff = diff;
+            out = i;
         }
     }
+//if(out>=0) fprintf(stderr, "[determineZoomLevel] zoomLevel is %"PRIu32"\n", fp->hdr->zoomHdrs->level[out]);
+//else fprintf(stderr, "[determineZoomLevel] %"PRId32"\n", out);
     return out;
 }
 
@@ -25,14 +30,28 @@ struct val_t {
     uint32_t nBases;
     float min, max, sum, sumsq;
 };
+
+struct vals_t {
+    uint32_t n;
+    struct val_t **vals;
+};
 /// @endcond
 
+void destroyVals_t(struct vals_t *v) {
+    uint32_t i;
+    if(!v) return;
+    for(i=0; i<v->n; i++) free(v->vals[i]);
+    if(v->vals) free(v->vals);
+    free(v);
+}
+
 //Returns NULL on error
-static struct val_t *getVal(bigWigFile_t *fp, bwOverlapBlock_t *o, int i) {
+static struct vals_t *getVals(bigWigFile_t *fp, bwOverlapBlock_t *o, int i, uint32_t tid, uint32_t start, uint32_t end) {
     void *buf = NULL, *compBuf = NULL;
-    uint32_t sz = fp->hdr->bufSize;
+    uLongf sz = fp->hdr->bufSize;
     int compressed = 0, rv;
-    uint32_t *p;
+    uint32_t *p, vtid, vstart, vend;
+    struct vals_t *vals = NULL;
     struct val_t *v = NULL;
 
     if(sz) {
@@ -43,6 +62,9 @@ static struct val_t *getVal(bigWigFile_t *fp, bwOverlapBlock_t *o, int i) {
 
     if(bwSetPos(fp, o->offset[i])) goto error;
 
+    vals = calloc(1,sizeof(struct vals_t));
+    if(!vals) goto error;
+
     v = malloc(sizeof(struct val_t));
     if(!v) goto error;
 
@@ -51,63 +73,78 @@ static struct val_t *getVal(bigWigFile_t *fp, bwOverlapBlock_t *o, int i) {
 
     if(bwRead(compBuf, o->size[i], 1, fp) != o->size[i]) goto error;
     if(compressed) {
-        rv = uncompress(buf, (uLongf *) &fp->hdr->bufSize, compBuf, o->size[i]);
+        sz = fp->hdr->bufSize;
+        rv = uncompress(buf, (uLongf *) &sz, compBuf, o->size[i]);
         if(rv != Z_OK) goto error;
     } else {
         buf = compBuf;
     }
 
     p = buf;
-    v->nBases = p[3];
-    v->min = ((float*) p)[4];
-    v->max = ((float*) p)[5];
-    v->sum = ((float*) p)[6];
-    v->sumsq = ((float*) p)[7];
+    while((void*)p-buf < sz) {
+        vtid = p[0];
+        vstart = p[1];
+        vend = p[2];
+        v->nBases = p[3];
+        v->min = ((float*) p)[4];
+        v->max = ((float*) p)[5];
+        v->sum = ((float*) p)[6];
+        v->sumsq = ((float*) p)[7];
 
+        if(tid == vtid) {
+            if((start <= vstart && end > vstart) || (start < vend && start >= vstart)) {
+                vals->vals = realloc(vals->vals, sizeof(struct val_t*)*(vals->n+1));
+                if(!vals->vals) goto error;
+                vals->vals[vals->n++] = v;
+                v = malloc(sizeof(struct val_t));
+                if(!v) goto error;
+            }
+            if(vstart > end) break;
+        } else if(vtid > tid) {
+            break;
+        }
+        p+=8;
+    }
+
+    free(v);
     free(buf);
     free(compBuf);
-    return v;
+    return vals;
 
 error:
     if(buf) free(buf);
     if(compBuf) free(compBuf);
     if(v) free(v);
+    destroyVals_t(vals);
     return NULL;
 }
 
 //On error, errno is set to ENOMEM and NaN is returned (though NaN can be returned normally)
 //Does UCSC compensate for partial block/range overlap?
-static double blockMean(bigWigFile_t *fp, bwOverlapBlock_t *blocks) {
-    uint32_t i;
-    double output = 0.0, *means = NULL;
-    uint32_t coverage = 0, *nBases = NULL;
-    struct val_t *v = NULL;
+static double blockMean(bigWigFile_t *fp, bwOverlapBlock_t *blocks, uint32_t tid, uint32_t start, uint32_t end) {
+    uint32_t i, j;
+    double output = 0.0;
+    uint32_t coverage = 0;
+    struct vals_t *v = NULL;
 
     if(!blocks->n) return strtod("NaN", NULL);
 
-    means = malloc(blocks->n*sizeof(double));
-    nBases = calloc(blocks->n, sizeof(uint32_t));
-    if((!means) || (!nBases)) goto error;
-
     //Iterate over the blocks
     for(i=0; i<blocks->n; i++) {
-        v = getVal(fp, blocks, i);
+        v = getVals(fp, blocks, i, tid, start, end);
         if(!v) goto error;
-        means[i] = v->sum;
-        nBases[i] = v->nBases;
-        free(v);
+        for(j=0; j<v->n; j++) {
+            output += v->vals[j]->sum;
+            coverage += v->vals[j]->nBases;
+        }
+        destroyVals_t(v);
     }
 
-    for(i=0; i<blocks->n; i++) coverage += nBases[i];
-    for(i=0; i<blocks->n; i++) output += means[i];
+    if(!coverage) return strtod("NaN", NULL);
 
-    free(means);
-    free(nBases);
     return output/coverage;
 
 error:
-    if(nBases) free(nBases);
-    if(means) free(means);
     if(v) free(v);
     errno = ENOMEM;
     return strtod("NaN", NULL);
@@ -132,45 +169,31 @@ static double intMean(bwOverlappingIntervals_t* ints, uint32_t start, uint32_t e
 }
 
 //Does UCSC compensate for partial block/range overlap?
-static double blockDev(bigWigFile_t *fp, bwOverlapBlock_t *blocks) {
-    uint32_t i;
-    double *means = NULL, *ssqs = NULL;
+static double blockDev(bigWigFile_t *fp, bwOverlapBlock_t *blocks, uint32_t tid, uint32_t start, uint32_t end) {
+    uint32_t i, j;
     double mean = 0.0, ssq = 0.0;
-    uint32_t coverage = 0, *nBases = NULL;
-    struct val_t *v = NULL;
+    uint32_t coverage = 0;
+    struct vals_t *v = NULL;
 
     if(!blocks->n) return strtod("NaN", NULL);
 
-    means = malloc(blocks->n*sizeof(double));
-    ssqs = malloc(blocks->n*sizeof(double));
-    nBases = calloc(blocks->n, sizeof(uint32_t));
-    if((!means) || (!nBases)) goto error;
-
     //Iterate over the blocks
     for(i=0; i<blocks->n; i++) {
-        v = getVal(fp, blocks, i);
+        v = getVals(fp, blocks, i, tid, start, end);
         if(!v) goto error;
-        means[i] = v->sum;
-        ssqs[i] = v->sumsq;
-        nBases[i] = v->nBases;
-        free(v);
+        for(j=0; j<v->n; j++) {
+            coverage += v->vals[j]->nBases;
+            mean += v->vals[j]->sum;
+            ssq += v->vals[j]->sumsq;
+        }
+        destroyVals_t(v);
     }
 
-    for(i=0; i<blocks->n; i++) coverage += nBases[i];
-    for(i=0; i<blocks->n; i++) mean += means[i];
-    for(i=0; i<blocks->n; i++) ssq += ssqs[i];
-
-    free(means);
-    free(ssqs);
-    free(nBases);
     if(coverage<2) return strtod("NaN", NULL);
     return sqrt((ssq-pow(mean,2.0)/coverage)/(coverage-1)); //The precision of this isn't great, but there's no other method...
 
 error:
-    if(nBases) free(nBases);
-    if(means) free(means);
-    if(ssqs) free(ssqs);
-    if(v) free(v);
+    destroyVals_t(v);
     errno = ENOMEM;
     return strtod("NaN", NULL);
 }
@@ -196,30 +219,32 @@ static double intDev(bwOverlappingIntervals_t* ints, uint32_t start, uint32_t en
     return sqrt((sum2-pow(sum,2.0)/nBases)/(nBases-1));
 }
 
-static double blockMax(bigWigFile_t *fp, bwOverlapBlock_t *blocks) {
-    uint32_t i;
-    double o;
-    struct val_t *v = NULL;
+static double blockMax(bigWigFile_t *fp, bwOverlapBlock_t *blocks, uint32_t tid, uint32_t start, uint32_t end) {
+    uint32_t i, j, isNA = 1;
+    double o = strtod("NaN", NULL);
+    struct vals_t *v = NULL;
 
-    if(!blocks->n) return strtod("NaN", NULL);
+    if(!blocks->n) return o;
 
-    //Get the first block
-    v = getVal(fp, blocks, 0);
-    if(!v) goto error;
-    o = v->max;
-    free(v);
-    //Iterate over the remaining blocks
-    for(i=1; i<blocks->n; i++) {
-        v = getVal(fp, blocks, i);
+    //Iterate the blocks
+    for(i=0; i<blocks->n; i++) {
+        v = getVals(fp, blocks, i, tid, start, end);
         if(!v) goto error;
-        if(v->max > o) o=v->max;
-        free(v);
+        for(j=0; j<v->n; j++) {
+            if(isNA) {
+                o = v->vals[j]->max;
+                isNA = 0;
+            } else if(v->vals[j]->max > o) {
+                o = v->vals[j]->max;
+            }
+        }
+        destroyVals_t(v);
     }
 
     return o;
 
 error:
-    if(v) free(v);
+    destroyVals_t(v);
     errno = ENOMEM;
     return strtod("NaN", NULL);
 }
@@ -238,30 +263,30 @@ static double intMax(bwOverlappingIntervals_t* ints) {
     return o;
 }
 
-static double blockMin(bigWigFile_t *fp, bwOverlapBlock_t *blocks) {
-    uint32_t i;
-    double o;
-    struct val_t *v = NULL;
+static double blockMin(bigWigFile_t *fp, bwOverlapBlock_t *blocks, uint32_t tid, uint32_t start, uint32_t end) {
+    uint32_t i, j, isNA = 1;
+    double o = strtod("NaN", NULL);
+    struct vals_t *v = NULL;
 
-    if(!blocks->n) return strtod("NaN", NULL);
+    if(!blocks->n) return o;
 
-    //Get the first block
-    v = getVal(fp, blocks, 0);
-    if(!v) goto error;
-    o = v->min;
-    free(v);
-    //Iterate over the remaining blocks
-    for(i=1; i<blocks->n; i++) {
-        v = getVal(fp, blocks, i);
+    //Iterate the blocks
+    for(i=0; i<blocks->n; i++) {
+        v = getVals(fp, blocks, i, tid, start, end);
         if(!v) goto error;
-        if(v->max < o) o=v->min;
-        free(v);
+        for(j=0; j<v->n; j++) {
+            if(isNA) {
+                o = v->vals[j]->min;
+                isNA = 0;
+            } else if(v->vals[j]->min < o) o = v->vals[j]->min;
+        }
+        destroyVals_t(v);
     }
 
     return o;
 
 error:
-    if(v) free(v);
+    destroyVals_t(v);
     errno = ENOMEM;
     return strtod("NaN", NULL);
 }
@@ -281,25 +306,28 @@ static double intMin(bwOverlappingIntervals_t* ints) {
 }
 
 //Does UCSC compensate for only partial block/interval overlap?
-static double blockCoverage(bigWigFile_t *fp, bwOverlapBlock_t *blocks) {
-    uint32_t i;
+static double blockCoverage(bigWigFile_t *fp, bwOverlapBlock_t *blocks, uint32_t tid, uint32_t start, uint32_t end) {
+    uint32_t i, j;
     double o = 0.0;
-    struct val_t *v = NULL;
+    struct vals_t *v = NULL;
 
     if(!blocks->n) return strtod("NaN", NULL);
 
     //Iterate over the blocks
     for(i=0; i<blocks->n; i++) {
-        v = getVal(fp, blocks, i);
+        v = getVals(fp, blocks, i, tid, start, end);
         if(!v) goto error;
-        o += v->nBases;
-        free(v);
+        for(j=0; j<v->n; j++) {
+            o+= v->vals[j]->nBases;
+        }
+        destroyVals_t(v);
     }
 
+    if(o == 0.0) return strtod("NaN", NULL);
     return o;
 
 error:
-    if(v) free(v);
+    destroyVals_t(v);
     errno = ENOMEM;
     return strtod("NaN", NULL);
 }
@@ -325,7 +353,7 @@ static double intCoverage(bwOverlappingIntervals_t* ints, uint32_t start, uint32
 double *bwStatsFromZoom(bigWigFile_t *fp, int32_t level, uint32_t tid, uint32_t start, uint32_t end, uint32_t nBins, enum bwStatsType type) {
     bwOverlapBlock_t *blocks = NULL;
     double *output = NULL;
-    uint32_t span, pos, i;
+    uint32_t pos = start, i, end2;
 
     if(!fp->hdr->zoomHdrs->idx[level]) {
         fp->hdr->zoomHdrs->idx[level] = bwReadIndex(fp, fp->hdr->zoomHdrs->indexOffset[level]);
@@ -336,45 +364,44 @@ double *bwStatsFromZoom(bigWigFile_t *fp, int32_t level, uint32_t tid, uint32_t 
     if(!output) return NULL;
 
     for(i=0, pos=start; i<nBins; i++) {
-        if(i==nBins-1) span = end-pos;
-        blocks = walkRTreeNodes(fp, fp->hdr->zoomHdrs->idx[i]->root, tid, pos, pos+span);
+        end2 = start + ((double)(end-start)*(i+1))/((int) nBins);
+        blocks = walkRTreeNodes(fp, fp->hdr->zoomHdrs->idx[level]->root, tid, pos, end2);
         if(!blocks) goto error;
 
-        //Decompress if needed
- 
         switch(type) {
         case 0:
             //mean
-            output[i] = blockMean(fp, blocks);
+            output[i] = blockMean(fp, blocks, tid, pos, end2);
             break;
         case 1:
             //stdev
-            output[i] = blockDev(fp, blocks);
+            output[i] = blockDev(fp, blocks, tid, pos, end2);
             break;
         case 2:
             //max
-            output[i] = blockMax(fp, blocks);
+            output[i] = blockMax(fp, blocks, tid, pos, end2);
             break;
         case 3:
             //min
-            output[i] = blockMin(fp, blocks);
+            output[i] = blockMin(fp, blocks, tid, pos, end2);
             break;
         case 4:
             //cov
-            output[i] = blockCoverage(fp, blocks)/span;
+            output[i] = blockCoverage(fp, blocks, tid, pos, end2)/(end2-pos);
             break;
         default:
             goto error;
             break;
         }
         if(errno) goto error;
-
         destroyBWOverlapBlock(blocks);
+        pos = end2;
     }
 
     return output;
 
 error:
+    fprintf(stderr, "got an error in bwStatsFromZoom %"PRIu32"-%"PRIu32"\n", pos, end2);
     if(blocks) destroyBWOverlapBlock(blocks);
     if(output) free(output);
     return NULL;
@@ -383,14 +410,11 @@ error:
 double *bwStatsFromFull(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end, uint32_t nBins, enum bwStatsType type) {
     bwOverlappingIntervals_t *ints = NULL;
     double *output = malloc(sizeof(double)*nBins);
-    uint32_t i, pos, span = floor(((double)(end-start))/nBins), end2;
-    if(span < 1) return NULL;
+    uint32_t i, pos = start, end2;
     if(!output) return NULL;
 
     for(i=0; i<nBins; i++) {
-        pos = start+i*span;
-        end2 = pos+span;
-        if(end2 > end || i == nBins-1) end2=end;
+        end2 = start + ((double)(end-start)*(i+1))/((int) nBins);
         ints = bwGetOverlappingIntervals(fp, chrom, pos, end2);
 
         if(!ints) {
@@ -416,6 +440,7 @@ double *bwStatsFromFull(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t 
             break;
         }
         bwDestroyOverlappingIntervals(ints);
+        pos = end2;
     }
 
     return output;
@@ -424,7 +449,7 @@ double *bwStatsFromFull(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t 
 //Returns a list of floats of length nBins that must be free()d
 //On error, NULL is returned
 double *bwStats(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end, uint32_t nBins, enum bwStatsType type) {
-    int32_t level = determineZoomLevel(fp, lrint(ceil((double)(end-start)/nBins)));
+    int32_t level = determineZoomLevel(fp, ((double)(end-start))/((int) nBins));
     uint32_t tid = bwGetTid(fp, chrom);
     if(tid == -1) return NULL;
 

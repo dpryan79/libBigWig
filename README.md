@@ -58,7 +58,11 @@ The only functions and structures that end users need to care about are in "bigW
 
 #To do
  - [ ] Fully validate correctness of statistic calculation
-   - [ ] Do Kent's tools take block partial overlap with an interval into account when determining statistics?
+   - [X] min
+   - [X] max
+   - [ ] mean
+   - [ ] std
+   - [ ] coverage
  - [ ] Test remote files
    - [X] HTTP
    - [ ] HTTPS (this should work)

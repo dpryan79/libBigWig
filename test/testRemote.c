@@ -105,6 +105,7 @@ int main(int argc, char *argv[]) {
     bigWigFile_t *fp = NULL;
     bwOverlappingIntervals_t *intervals = NULL;
     double *stats = NULL;
+    char chrom[] = "1";
     if(argc != 2) {
         fprintf(stderr, "Usage: %s {file.bw|URL://path/file.bw}\n", argv[0]);
         return 1;
@@ -125,78 +126,77 @@ int main(int argc, char *argv[]) {
     bwPrintIndexTree(fp);
 
     //Try to get some blocks
-    printf("chr1:10000000-10000100 Intervals\n");
-    intervals = bwGetOverlappingIntervals(fp, "chr1", 10000000, 10000100);
+    printf("%s:10000000-10000100 Intervals\n", chrom);
+    intervals = bwGetOverlappingIntervals(fp, chrom, 10000000, 10000100);
     printIntervals(intervals,0);
     bwDestroyOverlappingIntervals(intervals);
 
-    printf("chr1:10000000-10000100 Values\n");
-    intervals = bwGetValues(fp, "chr1", 10000000, 10000100, 0);
+    printf("%s:10000000-10000100 Values\n", chrom);
+    intervals = bwGetValues(fp, chrom, 10000000, 10000100, 0);
     printIntervals(intervals,0);
     bwDestroyOverlappingIntervals(intervals);
 
-    stats = bwStats(fp, "chr1", 10000000, 10000100, 1, mean);
+    stats = bwStats(fp, chrom, 10000000, 10000100, 1, mean);
     if(stats) {
-        printf("chr1:10000000-10000100 mean: %f\n", stats[0]);
+        printf("%s:10000000-10000100 mean: %f\n", chrom, stats[0]);
         free(stats);
     }
 
-    stats = bwStats(fp, "chr1", 10000000, 10000100, 2, mean);
+    stats = bwStats(fp, chrom, 10000000, 10000100, 2, mean);
     if(stats) {
-        printf("chr1:10000000-10000100 mean: %f %f\n", stats[0], stats[1]);
+        printf("%s:10000000-10000100 mean: %f %f\n", chrom, stats[0], stats[1]);
         free(stats);
     }
 
-    stats = bwStats(fp, "chr1", 10000000, 10000100, 1, dev);
+    stats = bwStats(fp, chrom, 10000000, 10000100, 1, dev);
     if(stats) {
-        printf("chr1:10000000-10000100 std. dev.: %f\n", stats[0]);
+        printf("%s:10000000-10000100 std. dev.: %f\n", chrom, stats[0]);
         free(stats);
     }
 
-    stats = bwStats(fp, "chr1", 10000000, 10000100, 2, dev);
+    stats = bwStats(fp, chrom, 10000000, 10000100, 2, dev);
     if(stats) {
-        printf("chr1:10000000-10000100 std. dev.: %f %f\n", stats[0], stats[1]);
+        printf("%s:10000000-10000100 std. dev.: %f %f\n", chrom, stats[0], stats[1]);
         free(stats);
     }
 
-    stats = bwStats(fp, "chr1", 10000000, 10000100, 1, min);
+    stats = bwStats(fp, chrom, 10000000, 10000100, 1, min);
     if(stats) {
-        printf("chr1:10000000-10000100 min: %f\n", stats[0]);
+        printf("%s:10000000-10000100 min: %f\n", chrom, stats[0]);
         free(stats);
     }
 
-    stats = bwStats(fp, "chr1", 10000000, 10000100, 2, min);
+    stats = bwStats(fp, chrom, 10000000, 10000100, 2, min);
     if(stats) {
-        printf("chr1:10000000-10000100 min: %f %f\n", stats[0], stats[1]);
+        printf("%s:10000000-10000100 min: %f %f\n", chrom, stats[0], stats[1]);
         free(stats);
     }
 
-    stats = bwStats(fp, "chr1", 10000000, 10000100, 1, max);
+    stats = bwStats(fp, chrom, 10000000, 10000100, 1, max);
     if(stats) {
-        printf("chr1:10000000-10000100 max: %f\n", stats[0]);
+        printf("%s:10000000-10000100 max: %f\n", chrom, stats[0]);
         free(stats);
     }
 
-    stats = bwStats(fp, "chr1", 10000000, 10000100, 2, max);
+    stats = bwStats(fp, chrom, 10000000, 10000100, 2, max);
     if(stats) {
-        printf("chr1:10000000-10000100 max: %f %f\n", stats[0], stats[1]);
+        printf("%s:10000000-10000100 max: %f %f\n", chrom, stats[0], stats[1]);
         free(stats);
     }
 
-    stats = bwStats(fp, "chr1", 10000000, 10000100, 1, cov);
+    stats = bwStats(fp, chrom, 10000000, 10000100, 1, cov);
     if(stats) {
-        printf("chr1:10000000-10000100 coverage: %f\n", stats[0]);
+        printf("%s:10000000-10000100 coverage: %f\n", chrom, stats[0]);
         free(stats);
     }
 
-    stats = bwStats(fp, "chr1", 10000000, 10000100, 2, cov);
+    stats = bwStats(fp, chrom, 10000000, 10000100, 2, cov);
     if(stats) {
-        printf("chr1:10000000-10000100 coverage: %f %f\n", stats[0], stats[1]);
+        printf("%s:10000000-10000100 coverage: %f %f\n", chrom, stats[0], stats[1]);
         free(stats);
     }
 
     bwClose(fp);
     bwCleanup();
-    curl_global_cleanup();
     return 0;
 }

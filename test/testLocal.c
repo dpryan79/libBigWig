@@ -195,6 +195,5 @@ int main(int argc, char *argv[]) {
 
     bwClose(fp);
     bwCleanup();
-    curl_global_cleanup();
     return 0;
 }
