@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
     bigWigFile_t *fp = NULL;
     bwOverlappingIntervals_t *intervals = NULL;
     double *stats = NULL;
-    char chrom[] = "1";
+    char chrom[] = "chr1";
     if(argc != 2) {
         fprintf(stderr, "Usage: %s {file.bw|URL://path/file.bw}\n", argv[0]);
         return 1;

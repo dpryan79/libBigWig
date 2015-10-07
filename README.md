@@ -75,4 +75,4 @@ The results of `min`, `max`, and `mean` should be the same as those from `BigWig
    - [x] FTP with non-default login information
    - [x] User-defined function to directly deal with curl before `curl_easy_perform()`. See `test/testRemote` for an example. The same call back method can be used to set ports and proxy information.
  - [ ] Write methods for creating bigWig files (from bedGraph like input)
- - [ ] Run valgrind on everything
+ - [X] Run valgrind on everything

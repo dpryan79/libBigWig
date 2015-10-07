@@ -187,8 +187,14 @@ error:
 static bwOverlapBlock_t *mergeOverlapBlocks(bwOverlapBlock_t *b1, bwOverlapBlock_t *b2) {
     uint64_t i,j;
     if(!b2) return b1;
-    if(!b2->n) return b1;
-    if(!b1->n) return b2;
+    if(!b2->n) {
+        destroyBWOverlapBlock(b2);
+        return b1;
+    }
+    if(!b1->n) {
+        destroyBWOverlapBlock(b1);
+        return b2;
+    }
     j = b1->n;
     b1->n += b2->n;
     b1->offset = realloc(b1->offset, sizeof(uint64_t) * (b1->n+b2->n));
