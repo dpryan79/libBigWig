@@ -51,6 +51,7 @@
  * An enum that dictates the type of statistic to fetch for a given interval
  */
 enum bwStatsType {
+    doesNotExist = -1,
     mean = 0,
     average = 0,
     std = 1,

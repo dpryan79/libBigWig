@@ -446,6 +446,7 @@ double *bwStatsFromFull(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t 
         }
 
         switch(type) {
+        default :
         case 0:
             output[i] = intMean(ints, pos, end2);
             break;

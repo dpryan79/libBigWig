@@ -347,7 +347,7 @@ bwOverlappingIntervals_t *bwGetOverlappingIntervalsCore(bigWigFile_t *fp, bwOver
     int compressed = 0, rv;
     uLongf sz = fp->hdr->bufSize;
     void *buf = NULL, *compBuf = NULL;
-    uint32_t start, end , *p;
+    uint32_t start = 0, end , *p;
     float value;
     bwDataHeader_t hdr;
     bwOverlappingIntervals_t *output = calloc(1, sizeof(bwOverlappingIntervals_t));
@@ -409,6 +409,9 @@ bwOverlappingIntervals_t *bwGetOverlappingIntervalsCore(bigWigFile_t *fp, bwOver
                 end = start+hdr.span;
                 value = *((float *)p);
                 p++;
+                break;
+            default :
+                goto error;
                 break;
             }
 
