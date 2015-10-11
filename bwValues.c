@@ -155,6 +155,7 @@ static bwOverlapBlock_t *overlapsLeaf(bwRTreeNode_t *node, uint32_t tid, uint32_
         if(!o->size) goto error;
 
         for(i=0; i<node->nChildren; i++) {
+            if(tid < node->chrIdxStart[i] || tid > node->chrIdxEnd[i]) continue;
             if(node->chrIdxStart[i] != node->chrIdxEnd[i]) {
                 if(tid == node->chrIdxStart[i]) {
                     if(node->baseStart[i] >= end) continue;
