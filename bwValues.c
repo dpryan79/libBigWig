@@ -345,7 +345,7 @@ bwOverlappingIntervals_t *bwGetOverlappingIntervalsCore(bigWigFile_t *fp, bwOver
     uint64_t i;
     uint16_t j;
     int compressed = 0, rv;
-    uLongf sz = fp->hdr->bufSize;
+    uLongf sz = fp->hdr->bufSize, tmp;
     void *buf = NULL, *compBuf = NULL;
     uint32_t start = 0, end , *p;
     float value;
@@ -371,13 +371,14 @@ bwOverlappingIntervals_t *bwGetOverlappingIntervalsCore(bigWigFile_t *fp, bwOver
 
         if(bwRead(compBuf, o->size[i], 1, fp) != o->size[i]) goto error;
         if(compressed) {
-            rv = uncompress(buf, (uLongf *) &fp->hdr->bufSize, compBuf, o->size[i]);
+            tmp = fp->hdr->bufSize; //This gets over-written by uncompress
+            rv = uncompress(buf, (uLongf *) &tmp, compBuf, o->size[i]);
             if(rv != Z_OK) goto error;
         } else {
             buf = compBuf;
         }
 
-        //Do stuff (bwgSectionHeadFromMem)
+        //TODO: ensure that tmp is large enough!
         bwFillDataHdr(&hdr, buf);
 
         p = ((uint32_t*) buf);
@@ -426,7 +427,7 @@ bwOverlappingIntervals_t *bwGetOverlappingIntervalsCore(bigWigFile_t *fp, bwOver
     return output;
 
 error:
-    fprintf(stderr, "[bwProcessOverlapBlock] Got an error\n");
+    fprintf(stderr, "[bwGetOverlappingIntervalsCore] Got an error\n");
     if(output) bwDestroyOverlappingIntervals(output);
     if(compressed && buf) free(buf);
     if(compBuf) free(compBuf);
