@@ -193,6 +193,16 @@ int main(int argc, char *argv[]) {
     printf("1:0-1000 coverage: %f %f\n", stats[0], stats[1]);
     free(stats);
 
+    printf("1:0-200000000 intervals\n");
+    intervals = bwGetOverlappingIntervals(fp, "1", 0, 200000000);
+    printIntervals(intervals,0);
+    bwDestroyOverlappingIntervals(intervals);
+
+    printf("10:0-200000000 intervals\n");
+    intervals = bwGetOverlappingIntervals(fp, "10", 0, 200000000);
+    printIntervals(intervals,0);
+    bwDestroyOverlappingIntervals(intervals);
+
     bwClose(fp);
     bwCleanup();
     return 0;

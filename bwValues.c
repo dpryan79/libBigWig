@@ -274,6 +274,7 @@ bwOverlapBlock_t *walkRTreeNodes(bigWigFile_t *bw, bwRTreeNode_t *root, uint32_t
 //Return -1 (AKA 0xFFFFFFFF...) on "not there", so we can hold (2^32)-1 items.
 uint32_t bwGetTid(bigWigFile_t *fp, char *chrom) {
     uint32_t i;
+    if(!chrom) return -1;
     for(i=0; i<fp->cl->nKeys; i++) {
         if(strcmp(chrom, fp->cl->chrom[i]) == 0) return i;
     }
