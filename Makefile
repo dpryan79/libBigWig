@@ -49,9 +49,6 @@ test/testLocal: libBigWig.a
 test/testRemote: libBigWig.a
 	gcc -o $@ -I. $(CFLAGS) test/testRemote.c libBigWig.a -lcurl -lz -lm
 
-test/testIntegrity: libBigWig.a
-	gcc -o $@ -I. $(CFLAGS) test/testIntegrity.c libBigWig.a -lcurl -lz -lm
-
 test: test/testLocal test/testRemote
 	./test/testLocal test/test.bw
 	./test/testRemote ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeCrgMapabilityAlign50mer.bigWig
