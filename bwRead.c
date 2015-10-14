@@ -24,6 +24,7 @@ int bwSetPos(bigWigFile_t *fp, size_t pos) {
 //returns either the number of bytes read (nmemb==1) or nmemb (for nmemb>1) on success and some smaller number on error.
 size_t bwRead(void *data, size_t sz, size_t nmemb, bigWigFile_t *fp) {
     size_t i, rv;
+    if(fp->isWrite) return 0;
     for(i=0; i<nmemb; i++) {
         rv = urlRead(fp->URL, data+i*sz, sz);
         if(rv != sz) { //Got an error
@@ -54,6 +55,7 @@ void bwCleanup() {
 }
 
 static bwZoomHdr_t *bwReadZoomHdrs(bigWigFile_t *bw) {
+    if(bw->isWrite) return NULL;
     uint16_t i;
     bwZoomHdr_t *zhdr = malloc(sizeof(bwZoomHdr_t));
     if(!zhdr) return NULL;
@@ -105,19 +107,22 @@ error:
 
 static void bwHdrDestroy(bigWigHdr_t *hdr) {
     int i;
-    free(hdr->zoomHdrs->level);
-    free(hdr->zoomHdrs->dataOffset);
-    free(hdr->zoomHdrs->indexOffset);
-    for(i=0; i<hdr->nLevels; i++) {
-        if(hdr->zoomHdrs->idx[i]) bwDestroyIndex(hdr->zoomHdrs->idx[i]);
+    if(hdr->zoomHdrs) {
+        free(hdr->zoomHdrs->level);
+        free(hdr->zoomHdrs->dataOffset);
+        free(hdr->zoomHdrs->indexOffset);
+        for(i=0; i<hdr->nLevels; i++) {
+            if(hdr->zoomHdrs->idx[i]) bwDestroyIndex(hdr->zoomHdrs->idx[i]);
+        }
+        free(hdr->zoomHdrs->idx);
+        free(hdr->zoomHdrs);
     }
-    free(hdr->zoomHdrs->idx);
-    free(hdr->zoomHdrs);
     free(hdr);
 }
 
 static void bwHdrRead(bigWigFile_t *bw) {
     uint32_t magic;
+    if(bw->isWrite) return;
     bw->hdr = calloc(1, sizeof(bigWigHdr_t));
     if(!bw->hdr) return;
 
@@ -228,6 +233,7 @@ static chromList_t *bwReadChromList(bigWigFile_t *bw) {
     chromList_t *cl = NULL;
     uint32_t magic, keySize, valueSize, itemsPerBlock;
     uint64_t i, rv, itemCount;
+    if(bw->isWrite) return NULL;
     if(bwSetPos(bw, bw->hdr->ctOffset)) return NULL;
 
     cl = calloc(1, sizeof(chromList_t));
@@ -274,26 +280,34 @@ void bwClose(bigWigFile_t *fp) {
     free(fp);
 }
 
-bigWigFile_t *bwOpen(char *fname, CURLcode (*callBack) (CURL*)) {
+bigWigFile_t *bwOpen(char *fname, CURLcode (*callBack) (CURL*), const char *mode) {
     bigWigFile_t *bwg = calloc(1, sizeof(bigWigFile_t));
     if(!bwg) {
         fprintf(stderr, "[bwOpen] Couldn't allocate space to create the output object!\n");
         return NULL;
     }
-    bwg->URL = urlOpen(fname, *callBack);
-    if(!bwg->URL) goto error;
+    if((!mode) || (strchr(mode, 'w') == NULL)) {
+        bwg->isWrite = 0;
+        bwg->URL = urlOpen(fname, *callBack, NULL);
+        if(!bwg->URL) goto error;
 
-    //Attempt to read in the fixed header
-    bwHdrRead(bwg);
-    if(!bwg->hdr) goto error;
+        //Attempt to read in the fixed header
+        bwHdrRead(bwg);
+        if(!bwg->hdr) goto error;
 
-    //Read in the chromosome list
-    bwg->cl = bwReadChromList(bwg);
-    if(!bwg->cl) goto error;
+        //Read in the chromosome list
+        bwg->cl = bwReadChromList(bwg);
+        if(!bwg->cl) goto error;
 
-    //Read in the index
-    bwg->idx = bwReadIndex(bwg, 0);
-    if(!bwg->idx) goto error;
+        //Read in the index
+        bwg->idx = bwReadIndex(bwg, 0);
+        if(!bwg->idx) goto error;
+
+    } else {
+        bwg->isWrite = 1;
+        bwg->URL = urlOpen(fname, NULL, "w");
+        if(!bwg->URL) goto error;
+    }
 
     return bwg;
 

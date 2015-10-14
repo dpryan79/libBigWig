@@ -5,3 +5,4 @@
 *.a
 test/testLocal
 test/testRemote
+test/testWrite

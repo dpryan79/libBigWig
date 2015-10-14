@@ -46,6 +46,14 @@
  * The magic number of an index block in a file.
  */
 #define IDX_MAGIC 0x2468ace0
+/*!
+ * The default number of children per block.
+ */
+#define DEFAULT_nCHILDREN 64
+/*!
+ * The default decompression buffer size in bytes. This is used to determin
+ */
+#define DEFAULT_BLOCKSIZE 32768
 
 /*!
  * An enum that dictates the type of statistic to fetch for a given interval
@@ -60,7 +68,7 @@ enum bwStatsType {
     max = 2,
     min = 3,
     cov = 4,
-    coverage = 4,
+    coverage = 4
 };
 
 //Should hide this from end users
@@ -119,6 +127,7 @@ typedef struct {
     bigWigHdr_t *hdr; /**<The file header.*/
     chromList_t *cl; /**<A list of chromosome names (the order is the ID).*/
     bwRTree_t *idx; /**<The index for the full dataset.*/
+    int isWrite; /**<0: Opened for reading, 1: Opened for writing.*/
 } bigWigFile_t;
 
 //This should be hidden from end users
@@ -153,9 +162,10 @@ void bwCleanup(void);
  * This will open a local or remote bigWig file.
  * @param fname The file name or URL (http, https, and ftp are supported)
  * @param callBack An optional user-supplied function. This is applied to remote connections so users can specify things like proxy and password information. See `test/testRemote` for an example.
+ * @param The mode, by default "r". Both local and remote files can be read, but only local files can be written. For files being written the callback function is ignored. If and only if the mode contains "w" will the file be opened for writing (in all other cases the file will be opened for reading.
  * @return A bigWigFile_t * on success and NULL on error.
  */
-bigWigFile_t *bwOpen(char *fname, CURLcode (*callBack)(CURL*));
+bigWigFile_t *bwOpen(char *fname, CURLcode (*callBack)(CURL*), const char* mode);
 
 /*!
  * @brief Closes a bigWigFile_t and frees up allocated memory
@@ -278,3 +288,34 @@ void destroyBWOverlapBlock(bwOverlapBlock_t *b);
  * @return A pointer to an array of double precission floating point values. Note that bigWig files only hold 32-bit values, so this is done to help prevent overflows.
  */
 double *bwStats(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end, uint32_t nBins, enum bwStatsType type);
+
+
+//Writer functions
+
+/*!
+ * @brief Create a largely empty bigWig header
+ * Every bigWig file has a header, this creates the template for one.
+ * @param maxZooms The maximum number of zoom levels. If you specify 0 then there will be no zoom levels. A value <0 or > 65535 will result in a maximum of 10.
+ * @param compress 0: Do not compress blocks, 1: compress blocks. In truth, anything other than 0 is the same as 1.
+ * @return A bigWigHdr_t pointer
+ */
+bigWigHdr_t *bwCreateHdr(int32_t maxZooms, int compress);
+
+/*!
+ * @brief Take a list of chromosome names and lengths and return a pointer to a chromList_t
+ * This MUST be run before `bwWriteHdr()`. Note that the input is NOT free()d!
+ * @param chroms A list of chromosomes.
+ * @param lengths The length of each chromosome.
+ * @param n The number of chromosomes (thus, the length of `chroms` and `lengths`)
+ * @return A pointer to a chromList_t or NULL on error.
+ */
+chromList_t *bwCreateChromList(char **chroms, uint32_t *lengths, int64_t n);
+
+/*!
+ * @brief Write a the header to a bigWig file.
+ * You must have already opened the output file, created a header and a chromosome list.
+ * @param bw The output bigWigFile_t pointer.
+ * @see bwCreateHdr
+ * @see bwCreateChromList
+ */
+int bwWriteHdr(bigWigFile_t *bw);

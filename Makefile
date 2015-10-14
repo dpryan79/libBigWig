@@ -27,7 +27,7 @@ lib-shared: libBigWig.so
 doc:
 	doxygen
 
-OBJS = io.o bwValues.o bwRead.o bwStats.o
+OBJS = io.o bwValues.o bwRead.o bwStats.o bwWrite.o
 
 .c.o:
 	$(CC) -I. $(CFLAGS) $(INCLUDES) -c -o $@ $<
@@ -49,13 +49,18 @@ test/testLocal: libBigWig.a
 test/testRemote: libBigWig.a
 	gcc -o $@ -I. $(CFLAGS) test/testRemote.c libBigWig.a -lcurl -lz -lm
 
-test: test/testLocal test/testRemote
+test/testWrite: libBigWig.a
+	gcc -o $@ -I. $(CFLAGS) test/testWrite.c libBigWig.a -lcurl -lz -lm
+
+test: test/testLocal test/testRemote test/testWrite
 	./test/testLocal test/test.bw
 	./test/testRemote ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeCrgMapabilityAlign50mer.bigWig
 	./test/testRemote http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeCrgMapabilityAlign50mer.bigWig
+	./test/testWrite test/test.bw test/output.bw
+	#rm -rf test/output.bw
 
 clean:
-	rm -f *.o libBigWig.a libBigWig.so *.pico test/testLocal test/testRemote
+	rm -f *.o libBigWig.a libBigWig.so *.pico test/testLocal test/testRemote test/testWrite
 
 install: libBigWig.a
 	install libBigWig.a $(prefix)/lib
