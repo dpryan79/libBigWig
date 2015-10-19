@@ -58,19 +58,10 @@ The only functions and structures that end users need to care about are in "bigW
 
 The results of `min`, `max`, and `mean` should be the same as those from `BigWigSummary`. `std` and `coverage`, however, may differ due to Kent's tools producing incorrect results (at least for `coverage`, though the same appears to be the case for `std`).
 
+#Python interface
+
+There are currently two python interfaces that make use of libBigWig: [pyBigWig](https://github.com/dpryan79/pyBigWig) by me and [bw-python](https://github.com/brentp/bw-python) by Brent Pederson. Those interested are encouraged to give both a try!
+
 #To do
- - [X] Fully validate correctness of statistic calculation
-   - [X] min
-   - [X] max
-   - [X] mean
-   - [X] std
-   - [X] coverage
- - [ ] Test remote files
-   - [X] HTTP
-   - [ ] HTTPS (this should work)
-     - [ ] HTTPS with a self-signed certificate (adding `curl_easy_setopt(*handle, CURLOPT_SSL_VERIFYPEER, 0)` to the call back fed to `bwOpen()` should take care of this).
-   - [x] FTP
-   - [x] FTP with non-default login information
-   - [x] User-defined function to directly deal with curl before `curl_easy_perform()`. See `test/testRemote` for an example. The same call back method can be used to set ports and proxy information.
  - [ ] Write methods for creating bigWig files (from bedGraph like input)
- - [X] Run valgrind on everything
+ - [ ] Profile the code, since nothing has been optimized yet!
