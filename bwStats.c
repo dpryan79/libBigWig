@@ -1,4 +1,5 @@
 #include "bigWig.h"
+#include "bwCommon.h"
 #include <errno.h>
 #include <stdlib.h>
 #include <zlib.h>

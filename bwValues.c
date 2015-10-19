@@ -1,4 +1,5 @@
 #include "bigWig.h"
+#include "bwCommon.h"
 #include <stdlib.h>
 #include <string.h>
 #include <zlib.h>
@@ -502,7 +503,7 @@ error:
     return NULL;
 }
 
-static void bwDestroyIndexNode(bwRTreeNode_t *node) {
+void bwDestroyIndexNode(bwRTreeNode_t *node) {
     uint16_t i;
 
     if(!node) return;

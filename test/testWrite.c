@@ -7,6 +7,9 @@
 int main(int argc, char *argv[]) {
     bigWigFile_t *ifp = NULL;
     bigWigFile_t *ofp = NULL;
+    uint32_t tid, i;
+    char **chroms;
+    bwOverlappingIntervals_t *o;
     if(argc != 3) {
         fprintf(stderr, "Usage: %s {inputfile.bw|URL://path/inputfile.bw} outputfile.bw\n", argv[0]);
         return 1;
@@ -30,12 +33,25 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    ofp->hdr = bwCreateHdr(0, 1); //No zoom levels but compressed
-    if(!ofp->hdr) goto error;
+    if(bwCreateHdr(ofp, 0, 1)) goto error; //No zoom levels but compressed
     ofp->cl = bwCreateChromList(ifp->cl->chrom, ifp->cl->len, ifp->cl->nKeys);
     if(!ofp->cl) goto error;
 
     if(bwWriteHdr(ofp)) goto error;
+
+    //Copy all of the intervals
+    for(tid = 0; tid < ofp->cl->nKeys; tid++) {
+        o = bwGetOverlappingIntervals(ifp, ofp->cl->chrom[tid], 0, ofp->cl->len[tid]);
+        if(!o) goto error;
+        if(o->l) {
+            chroms = malloc(o->l * sizeof(char*));
+            if(!chroms) goto error;
+            for(i=0; i<o->l; i++) chroms[i] = ofp->cl->chrom[tid];
+            bwAddIntervals(ofp, chroms, o->start, o->end, o->value, o->l);
+            free(chroms);
+        }
+        bwDestroyOverlappingIntervals(o);
+    }
 
     bwClose(ifp);
     bwClose(ofp);
@@ -44,6 +60,7 @@ int main(int argc, char *argv[]) {
     return 0;
 
 error:
+    fprintf(stderr, "Got an error somewhere!\n");
     bwClose(ifp);
     bwClose(ofp);
     bwCleanup();

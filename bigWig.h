@@ -1,6 +1,7 @@
 #include "io.h"
 #include "bwValues.h"
 #include <inttypes.h>
+#include <zlib.h>
 
 /*! \mainpage libBigWig
  *
@@ -119,6 +120,36 @@ typedef struct {
     uint32_t *len; /**<The lengths of each chromosome */
 } chromList_t;
 
+//remove from bigWig.h
+typedef struct bwLL bwLL;
+struct bwLL {
+    bwRTreeNode_t *node;
+    struct bwLL *next;
+};
+
+/*!
+ * @brief This is only needed for writing bigWig files (and won't be created otherwise)
+ * This should be removed from bigWig.h
+ */
+typedef struct {
+    uint64_t nBlocks; /**<The number of blocks written*/
+    uint32_t blockSize; /**<The maximum number of children*/
+    uint64_t nEntries; /**<The number of entries processed. This is used for the first contig and determining how the zoom levels are computed*/
+    uint64_t runningWidthSum; /**<The running sum of the entry widths for the first contig (again, used for the first contig and computing zoom levels)*/
+    uint32_t tid; /**<The current TID that's being processed*/
+    uint32_t start; /**<The start position of the block*/
+    uint32_t end; /**<The end position of the block*/
+    uint32_t span; /**<The span of each entry, if applicable*/
+    uint32_t step; /**<The step size, if applicable*/
+    uint8_t ltype; /**<The type of the last entry added*/
+    uint32_t l; /**<The current size of p. This and the type determine the number of items held*/
+    void *p; /**<A buffer of size hdr->bufSize*/
+    bwLL *firstIndexNode; /**<The first index node in the linked list*/
+    bwLL *currentIndexNode; /**<The last index node in a linked list*/
+    uLongf compressPsz; /**<The size of the compression buffer*/
+    void *compressP; /**<A compressed buffer of size compressPsz*/
+} bwWriteBuffer_t;
+
 /*!
  * @brief A structure that holds everything needed to access a bigWig file.
  */
@@ -127,10 +158,10 @@ typedef struct {
     bigWigHdr_t *hdr; /**<The file header.*/
     chromList_t *cl; /**<A list of chromosome names (the order is the ID).*/
     bwRTree_t *idx; /**<The index for the full dataset.*/
+    bwWriteBuffer_t *writeBuffer; /**<The buffer used for writing.*/
     int isWrite; /**<0: Opened for reading, 1: Opened for writing.*/
 } bigWigFile_t;
 
-//This should be hidden from end users
 /*!
  * @brief Holds interval:value associations
  */
@@ -173,35 +204,6 @@ bigWigFile_t *bwOpen(char *fname, CURLcode (*callBack)(CURL*), const char* mode)
  */
 void bwClose(bigWigFile_t *fp);
 
-/*!
- * @brief Like fsetpos, but for local or remote bigWig files.
- * This will set the file position indicator to the specified point. For local files this literally is `fsetpos`, while for remote files it fills a memory buffer with data starting at the desired position.
- * @param fp A valid opened bigWigFile_t.
- * @param pos The position within the file to seek to.
- * @return 0 on success and -1 on error.
- */
-int bwSetPos(bigWigFile_t *fp, size_t pos);
-
-/*!
- * @brief A local/remote version of `fread`.
- * Reads data from either local or remote bigWig files.
- * @param data An allocated memory block big enough to hold the data.
- * @param sz The size of each member that should be copied.
- * @param nmemb The number of members to copy.
- * @param fp The bigWigFile_t * from which to copy the data.
- * @see bwSetPos
- * @return For nmemb==1, the size of the copied data. For nmemb>1, the number of members fully copied (this is equivalent to `fread`).
- */
-size_t bwRead(void *data, size_t sz, size_t nmemb, bigWigFile_t *fp);
-
-/*!
- * @brief Determine what the file position indicator say.
- * This is equivalent to `ftell` for local or remote files.
- * @param fp The file.
- * @return The position in the file.
- */
-long bwTell(bigWigFile_t *fp);
-
 /*******************************************************************************
 *
 * The following are in bwStats.c
@@ -216,22 +218,6 @@ long bwTell(bigWigFile_t *fp);
  * @return An ID, -1 will be returned on error (note that this is an unsigned value, so that's ~4 billion. BigWig files can't store that many chromosomes anyway.
  */
 uint32_t bwGetTid(bigWigFile_t *fp, char *chrom);
-
-/*!
- * @brief Reads a data index (either full data or a zoom level) from a bigWig file.
- * There is little reason for end users to use this function. This must be freed with `bwDestroyIndex`
- * @param fp A valid bigWigFile_t pointer
- * @param offset The file offset where the index begins
- * @return A bwRTree_t pointer or NULL on error.
- */
-bwRTree_t *bwReadIndex(bigWigFile_t *fp, uint64_t offset);
-
-/*!
- * @brief Frees space allocated by `bwReadIndex`
- * There is generally little reason to use this, since end users should typically not need to run `bwReadIndex` themselves.
- * @param idx A bwRTree_t pointer allocated by `bwReadIndex`.
- */
-void bwDestroyIndex(bwRTree_t *idx);
 
 /*!
  * @brief Frees space allocated by `bwGetOverlappingIntervals`
@@ -269,12 +255,6 @@ bwOverlappingIntervals_t *bwGetOverlappingIntervals(bigWigFile_t *fp, char *chro
  */
 bwOverlappingIntervals_t *bwGetValues(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end, int includeNA);
 
-/// @cond SKIP
-//These should be hidden from users and moved elsewhere.
-bwOverlapBlock_t *walkRTreeNodes(bigWigFile_t *bw, bwRTreeNode_t *root, uint32_t tid, uint32_t start, uint32_t end);
-void destroyBWOverlapBlock(bwOverlapBlock_t *b);
-/// @endcond
-
 /*!
  * @brief Determines per-interval statistics
  * Can determine mean/min/max/coverage/standard deviation of values in one or more intervals. You can optionally give it an interval and ask for values from X number of sub-intervals.
@@ -289,17 +269,17 @@ void destroyBWOverlapBlock(bwOverlapBlock_t *b);
  */
 double *bwStats(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end, uint32_t nBins, enum bwStatsType type);
 
-
 //Writer functions
 
 /*!
  * @brief Create a largely empty bigWig header
- * Every bigWig file has a header, this creates the template for one.
+ * Every bigWig file has a header, this creates the template for one. It also takes care of space allocation in the output write buffer.
+ * @param bigWigFile_t The bigWigFile_t* that you want to write to.
  * @param maxZooms The maximum number of zoom levels. If you specify 0 then there will be no zoom levels. A value <0 or > 65535 will result in a maximum of 10.
  * @param compress 0: Do not compress blocks, 1: compress blocks. In truth, anything other than 0 is the same as 1.
- * @return A bigWigHdr_t pointer
+ * @return 0 on success.
  */
-bigWigHdr_t *bwCreateHdr(int32_t maxZooms, int compress);
+int bwCreateHdr(bigWigFile_t *fp, int32_t maxZooms, int compress);
 
 /*!
  * @brief Take a list of chromosome names and lengths and return a pointer to a chromList_t
@@ -319,3 +299,10 @@ chromList_t *bwCreateChromList(char **chroms, uint32_t *lengths, int64_t n);
  * @see bwCreateChromList
  */
 int bwWriteHdr(bigWigFile_t *bw);
+
+int bwAddIntervals(bigWigFile_t *fp, char **chrom, uint32_t *start, uint32_t *end, float *values, uint32_t n);
+int bwAppendIntervals(bigWigFile_t *fp, uint32_t *start, uint32_t *end, float *values, uint32_t n);
+int bwAddIntervalSpans(bigWigFile_t *fp, char *chrom, uint32_t *start, uint32_t span, float *values, uint32_t n);
+int bwAppendIntervalSpans(bigWigFile_t *fp, uint32_t *start, float *values, uint32_t n);
+int bwAddIntervalSpanSteps(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t span, uint32_t step, float *values, uint32_t n);
+int bwAppendIntervalSpanSteps(bigWigFile_t *fp, float *values, uint32_t n);

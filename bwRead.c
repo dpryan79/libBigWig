@@ -1,4 +1,5 @@
 #include "bigWig.h"
+#include "bwCommon.h"
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
@@ -271,12 +272,21 @@ error:
     return NULL;
 }
 
+//This is here mostly for convenience
+static void bwDestroyWriteBuffer(bwWriteBuffer_t *wb) {
+    if(wb->p) free(wb->p);
+    if(wb->compressP) free(wb->compressP);
+    free(wb);
+}
+
 void bwClose(bigWigFile_t *fp) {
     if(!fp) return;
+    bwFinalize(fp); //In case we're writing!
     if(fp->URL) urlClose(fp->URL);
     if(fp->hdr) bwHdrDestroy(fp->hdr);
     if(fp->cl) destroyChromList(fp->cl);
     if(fp->idx) bwDestroyIndex(fp->idx);
+    if(fp->writeBuffer) bwDestroyWriteBuffer(fp->writeBuffer);
     free(fp);
 }
 
@@ -307,6 +317,8 @@ bigWigFile_t *bwOpen(char *fname, CURLcode (*callBack) (CURL*), const char *mode
         bwg->isWrite = 1;
         bwg->URL = urlOpen(fname, NULL, "w");
         if(!bwg->URL) goto error;
+        bwg->writeBuffer = calloc(1,sizeof(bwWriteBuffer_t));
+        if(!bwg->writeBuffer) goto error;
     }
 
     return bwg;
