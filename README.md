@@ -59,18 +59,8 @@ The only functions and structures that end users need to care about are in "bigW
 The results of `min`, `max`, and `mean` should be the same as those from `BigWigSummary`. `std` and `coverage`, however, may differ due to Kent's tools producing incorrect results (at least for `coverage`, though the same appears to be the case for `std`).
 
 #To do
- - [X] Fully validate correctness of statistic calculation
-   - [X] min
-   - [X] max
-   - [X] mean
-   - [X] std
-   - [X] coverage
- - [ ] Test remote files
-   - [X] HTTP
-   - [ ] HTTPS (this should work)
-     - [ ] HTTPS with a self-signed certificate (adding `curl_easy_setopt(*handle, CURLOPT_SSL_VERIFYPEER, 0)` to the call back fed to `bwOpen()` should take care of this).
-   - [x] FTP
-   - [x] FTP with non-default login information
-   - [x] User-defined function to directly deal with curl before `curl_easy_perform()`. See `test/testRemote` for an example. The same call back method can be used to set ports and proxy information.
  - [ ] Write methods for creating bigWig files (from bedGraph like input)
+ - [ ] Profile code, since this is likely slow in places.
+ - [ ] Can the produced files be used by Kent's tools/IGV/etc.
+ - [ ] Clean up the API, which is still sort of a mess.
  - [X] Run valgrind on everything

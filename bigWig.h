@@ -126,6 +126,12 @@ struct bwLL {
     bwRTreeNode_t *node;
     struct bwLL *next;
 };
+typedef struct bwZoomBuffer_t bwZoomBuffer_t;
+struct bwZoomBuffer_t { //each individual entry takes 32 bytes
+    void *p;
+    uint32_t l, m;
+    struct bwZoomBuffer_t *next;
+};
 
 /*!
  * @brief This is only needed for writing bigWig files (and won't be created otherwise)
@@ -146,6 +152,8 @@ typedef struct {
     void *p; /**<A buffer of size hdr->bufSize*/
     bwLL *firstIndexNode; /**<The first index node in the linked list*/
     bwLL *currentIndexNode; /**<The last index node in a linked list*/
+    bwZoomBuffer_t **firstZoomBuffer;
+    bwZoomBuffer_t **lastZoomBuffer;
     uLongf compressPsz; /**<The size of the compression buffer*/
     void *compressP; /**<A compressed buffer of size compressPsz*/
 } bwWriteBuffer_t;
@@ -168,7 +176,7 @@ typedef struct {
 typedef struct {
     uint32_t l; /**<Number of intervals held*/
     uint32_t m; /**<Maximum number of values/intervals the struct can hold*/
-    uint32_t *start; /**<The start positions (o-based half open)*/
+    uint32_t *start; /**<The start positions (0-based half open)*/
     uint32_t *end; /**<The end positions (0-based half open)*/
     float *value; /**<The value associated with each position*/
 } bwOverlappingIntervals_t;

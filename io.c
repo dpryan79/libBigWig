@@ -64,7 +64,7 @@ size_t url_fread(void *obuf, size_t obufSize, URL_t *URL) {
 //Note that in the case of remote files, the actual amount read may be less than the return value!
 size_t urlRead(URL_t *URL, void *buf, size_t bufSize) {
     if(URL->type==0) {
-        return fread(buf, bufSize, 1, URL->x.fp);
+        return fread(buf, bufSize, 1, URL->x.fp)*bufSize;
     } else {
         return url_fread(buf, bufSize, URL);
     }
@@ -203,7 +203,7 @@ URL_t *urlOpen(char *fname, CURLcode (*callBack)(CURL*), const char *mode) {
         }
     } else {
         URL->type = BWG_FILE;
-        URL->x.fp = fopen(fname, "wb");
+        URL->x.fp = fopen(fname, mode);
         if(!(URL->x.fp)) {
             free(URL);
             fprintf(stderr, "[urlOpen] Couldn't open %s for writing\n", fname);

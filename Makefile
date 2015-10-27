@@ -53,11 +53,12 @@ test/testWrite: libBigWig.a
 	gcc -o $@ -I. $(CFLAGS) test/testWrite.c libBigWig.a -lcurl -lz -lm
 
 test: test/testLocal test/testRemote test/testWrite
+	./test/testLocal test/test.bw
+	./test/testRemote ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeCrgMapabilityAlign50mer.bigWig
+	./test/testRemote http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeCrgMapabilityAlign50mer.bigWig
 	./test/testWrite test/test.bw test/output.bw
-	#./test/testLocal test/test.bw
-	#./test/testRemote ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeCrgMapabilityAlign50mer.bigWig
-	#./test/testRemote http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeCrgMapabilityAlign50mer.bigWig
-	#rm -rf test/output.bw
+	./test/testLocal test/output.bw
+	rm -rf test/output.bw
 
 clean:
 	rm -f *.o libBigWig.a libBigWig.so *.pico test/testLocal test/testRemote test/testWrite
