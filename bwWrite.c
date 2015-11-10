@@ -218,7 +218,7 @@ static int insertIndexNode(bigWigFile_t *fp, bwRTreeNode_t *leaf) {
 static int appendIndexNodeEntry(bigWigFile_t *fp, uint32_t tid0, uint32_t tid1, uint32_t start, uint32_t end, uint64_t offset, uint64_t size) {
     bwLL *n = fp->writeBuffer->currentIndexNode;
     if(!n) return 1;
-    if(n->node->nChildren+1 >= fp->writeBuffer->blockSize) return 2;
+    if(n->node->nChildren >= fp->writeBuffer->blockSize) return 2;
 
     n->node->chrIdxStart[n->node->nChildren] = tid0;
     n->node->baseStart[n->node->nChildren] = start;
@@ -553,7 +553,7 @@ static bwRTreeNode_t *makeEmptyNode(uint32_t blockSize) {
     if(!n->chrIdxEnd) goto error;
     n->baseEnd = malloc(blockSize*sizeof(uint32_t));
     if(!n->baseEnd) goto error;
-    n->dataOffset = malloc(blockSize*sizeof(uint32_t));
+    n->dataOffset = calloc(blockSize,sizeof(uint64_t)); //This MUST be 0 for node writing!
     if(!n->dataOffset) goto error;
     n->x.child = malloc(blockSize*sizeof(uint64_t));
     if(!n->x.child) goto error;
@@ -573,31 +573,35 @@ error:
 
 //Returns 0 on success. This doesn't attempt to clean up!
 static bwRTreeNode_t *addLeaves(bwLL **ll, uint64_t *sz, uint64_t toProcess, uint32_t blockSize) {
-    uint32_t i, j;
+    uint32_t i;
     uint64_t foo;
     bwRTreeNode_t *n = makeEmptyNode(blockSize);
     if(!n) return NULL;
 
-    i = 0;
-    while(toProcess) {
-        foo = ceil(((double) toProcess)/((double) blockSize-i));
-        if(foo <= blockSize) {
-            for(j=0; j<foo; j++) {
-                n->chrIdxStart[j] = (*ll)->node->chrIdxStart[0];
-                n->baseStart[j] = (*ll)->node->baseStart[0];
-                n->chrIdxEnd[j] = (*ll)->node->chrIdxEnd[(*ll)->node->nChildren-1];
-                n->baseEnd[j] = (*ll)->node->baseEnd[(*ll)->node->nChildren-1];
-                n->x.child[j] = (*ll)->node;
-                *sz += 4 + 32*(*ll)->node->nChildren;
-                *ll = (*ll)->next;
-                n->nChildren++;
-            }
-        } else {
+    if(toProcess <= blockSize) {
+        for(i=0; i<toProcess; i++) {
+            n->chrIdxStart[i] = (*ll)->node->chrIdxStart[0];
+            n->baseStart[i] = (*ll)->node->baseStart[0];
+            n->chrIdxEnd[i] = (*ll)->node->chrIdxEnd[(*ll)->node->nChildren-1];
+            n->baseEnd[i] = (*ll)->node->baseEnd[(*ll)->node->nChildren-1];
+            n->x.child[i] = (*ll)->node;
+            *sz += 4 + 32*(*ll)->node->nChildren;
+            *ll = (*ll)->next;
+            n->nChildren++;
+        }
+    } else {
+        for(i=0; i<blockSize; i++) {
+            foo = ceil(((double) toProcess)/((double) blockSize-i));
+            if(!ll) break;
             n->x.child[i] = addLeaves(ll, sz, foo, blockSize);
             if(!n->x.child[i]) goto error;
+            n->chrIdxStart[i] = n->x.child[i]->chrIdxStart[0];
+            n->baseStart[i] = n->x.child[i]->baseStart[0];
+            n->chrIdxEnd[i] = n->x.child[i]->chrIdxEnd[n->x.child[i]->nChildren-1];
+            n->baseEnd[i] = n->x.child[i]->baseEnd[n->x.child[i]->nChildren-1];
+            n->nChildren++;
+            toProcess -= foo;
         }
-        toProcess -= foo;
-        i++;
     }
 
     *sz += 4 + 24*n->nChildren;
@@ -609,24 +613,26 @@ error:
 }
 
 //Returns 1 on error
-int writeIndexTreeNode(FILE *fp, bwRTreeNode_t *n, uint8_t *wrote) {
+int writeIndexTreeNode(FILE *fp, bwRTreeNode_t *n, uint8_t *wrote, int level) {
     uint8_t one = 0;
     uint32_t i, j, vector[6] = {0, 0, 0, 0, 0, 0}; //The last 8 bytes are left as 0
+
+    if(n->isLeaf) return 0;
 
     for(i=0; i<n->nChildren; i++) {
         if(n->dataOffset[i]) { //traverse into child
             if(n->isLeaf) return 0; //Only write leaves once!
-            if(writeIndexTreeNode(fp, n->x.child[i], wrote)) return 1;
+            if(writeIndexTreeNode(fp, n->x.child[i], wrote, level+1)) return 1;
         } else {
             n->dataOffset[i] = ftell(fp);
             if(fwrite(&(n->x.child[i]->isLeaf), sizeof(uint8_t), 1, fp) != 1) return 1;
             if(fwrite(&one, sizeof(uint8_t), 1, fp) != 1) return 1; //one byte of padding
             if(fwrite(&(n->x.child[i]->nChildren), sizeof(uint16_t), 1, fp) != 1) return 1;
-            for(j=0; j<n->nChildren; j++) {
-                vector[0] = n->chrIdxStart[j];
-                vector[1] = n->baseStart[j];
-                vector[2] = n->chrIdxEnd[j];
-                vector[3] = n->baseEnd[j];
+            for(j=0; j<n->x.child[i]->nChildren; j++) {
+                vector[0] = n->x.child[i]->chrIdxStart[j];
+                vector[1] = n->x.child[i]->baseStart[j];
+                vector[2] = n->x.child[i]->chrIdxEnd[j];
+                vector[3] = n->x.child[i]->baseEnd[j];
                 if(n->x.child[i]->isLeaf) {
                     //Include the offset and size
                     if(fwrite(vector, sizeof(uint32_t), 4, fp) != 4) return 1;
@@ -635,8 +641,8 @@ int writeIndexTreeNode(FILE *fp, bwRTreeNode_t *n, uint8_t *wrote) {
                 } else {
                     if(fwrite(vector, sizeof(uint32_t), 6, fp) != 6) return 1;
                 }
-                *wrote = 1;
             }
+            *wrote = 1;
         }
     }
 
@@ -650,7 +656,7 @@ int writeIndexOffsets(FILE *fp, bwRTreeNode_t *n, uint64_t offset) {
     if(n->isLeaf) return 0;
     for(i=0; i<n->nChildren; i++) {
         if(writeIndexOffsets(fp, n->x.child[i], n->dataOffset[i])) return 1;
-        if(writeAtPos(&(n->dataOffset[i]), sizeof(uint64_t), 1, offset+4+8*i, fp)) return 2;
+        if(writeAtPos(&(n->dataOffset[i]), sizeof(uint64_t), 1, offset+20+24*i, fp)) return 2;
     }
     return 0;
 }
@@ -661,8 +667,9 @@ int writeIndexTree(bigWigFile_t *fp) {
     uint8_t wrote = 0;
     int rv;
 
-    while((rv = writeIndexTreeNode(fp->URL->x.fp, fp->idx->root, &wrote)) == 0) {
+    while((rv = writeIndexTreeNode(fp->URL->x.fp, fp->idx->root, &wrote, 0)) == 0) {
         if(!wrote) break;
+        wrote = 0;
     }
 
     if(rv || wrote) return 1;
@@ -744,6 +751,7 @@ int writeIndex(bigWigFile_t *fp) {
             if(fwrite(&(root->dataOffset[i]), sizeof(uint64_t), 1, fp->URL->x.fp) != 1) return 20;
             if(fwrite(&(root->x.size[i]), sizeof(uint64_t), 1, fp->URL->x.fp) != 1) return 21;
         } else {
+            root->dataOffset[i] = 0; //FIXME: Something upstream is setting this to impossible values (e.g., 0x21?!?!?)
             if(fwrite(vector, sizeof(uint32_t), 6, fp->URL->x.fp) != 6) return 22;
         }
     }
@@ -963,9 +971,8 @@ error:
     return 1;
 }
 
-#include <assert.h>
 int writeZoomLevels(bigWigFile_t *fp) {
-    uint64_t offset, idxSize = 0;
+    uint64_t offset1, offset2, idxSize = 0;
     uint32_t i, j, four = 0, last, vector[6] = {0, 0, 0, 0, 0, 0}; //The last 8 bytes are left as 0;
     uint8_t wrote, one = 0;
     int rv;
@@ -1025,7 +1032,6 @@ int writeZoomLevels(bigWigFile_t *fp) {
         fp->hdr->zoomHdrs->indexOffset[i] = bwTell(fp);
         four = IDX_MAGIC;
         if(fwrite(&four, sizeof(uint32_t), 1, fp->URL->x.fp) != 1) return 1;
-//This is copy pasta
         root = fp->hdr->zoomHdrs->idx[i]->root;
         if(fwrite(&(fp->writeBuffer->blockSize), sizeof(uint32_t), 1, fp->URL->x.fp) != 1) return 6;
         if(fwrite(&(fp->writeBuffer->nBlocks), sizeof(uint64_t), 1, fp->URL->x.fp) != 1) return 7;
@@ -1058,12 +1064,24 @@ int writeZoomLevels(bigWigFile_t *fp) {
                 if(fwrite(vector, sizeof(uint32_t), 6, fp->URL->x.fp) != 6) return 22;
             }
         }
-//finished
-        while((rv = writeIndexTreeNode(fp->URL->x.fp, fp->hdr->zoomHdrs->idx[i]->root, &wrote)) == 0) {
+
+        offset1 = bwTell(fp);
+        while((rv = writeIndexTreeNode(fp->URL->x.fp, fp->hdr->zoomHdrs->idx[i]->root, &wrote, 0)) == 0) {
             if(!wrote) break;
+            wrote = 0;
         }
 
         if(rv || wrote) return 6;
+
+        //Save the file position
+        offset2 = bwTell(fp);
+
+        //Write the offsets
+        if(writeIndexOffsets(fp->URL->x.fp, root, offset1)) return 2;
+
+        //Move the file pointer back to the end
+        bwSetPos(fp, offset2);
+
 
         //Free the linked list
         zb = fp->writeBuffer->firstZoomBuffer[i];
@@ -1077,7 +1095,7 @@ int writeZoomLevels(bigWigFile_t *fp) {
     }
 
     //Write the zoom headers to disk
-    offset = bwTell(fp);
+    offset1 = bwTell(fp);
     if(bwSetPos(fp, 0x40)) return 7;
     four = 0;
     for(i=0; i<fp->hdr->nLevels; i++) {
@@ -1086,7 +1104,7 @@ int writeZoomLevels(bigWigFile_t *fp) {
         if(fwrite(&(fp->hdr->zoomHdrs->dataOffset[i]), sizeof(uint64_t), 1, fp->URL->x.fp) != 1) return 10;
         if(fwrite(&(fp->hdr->zoomHdrs->indexOffset[i]), sizeof(uint64_t), 1, fp->URL->x.fp) != 1) return 11;
     }
-    if(bwSetPos(fp, offset)) return 12;
+    if(bwSetPos(fp, offset1)) return 12;
 
     return 0;
 }
