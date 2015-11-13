@@ -34,6 +34,10 @@
  * BTW, this library doesn't switch endianness as appropriate, since I kind of assume that there's only one type produced these days.
  */
 
+/*!
+ * The library version number
+ */
+#define LIBBIGWIG_VERSION 0.1
 
 /*!
  * The magic number of a bigWig file.
@@ -152,8 +156,9 @@ typedef struct {
     void *p; /**<A buffer of size hdr->bufSize*/
     bwLL *firstIndexNode; /**<The first index node in the linked list*/
     bwLL *currentIndexNode; /**<The last index node in a linked list*/
-    bwZoomBuffer_t **firstZoomBuffer;
-    bwZoomBuffer_t **lastZoomBuffer;
+    bwZoomBuffer_t **firstZoomBuffer; /**<The first node in a linked list of leaf nodes*/
+    bwZoomBuffer_t **lastZoomBuffer; /**<The last node in a linked list of leaf nodes*/
+    uint64_t *nNodes; /**<The number of leaf nodes per zoom level, useful for determining duplicate levels*/
     uLongf compressPsz; /**<The size of the compression buffer*/
     void *compressP; /**<A compressed buffer of size compressPsz*/
 } bwWriteBuffer_t;

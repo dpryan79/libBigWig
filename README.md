@@ -59,7 +59,9 @@ The only functions and structures that end users need to care about are in "bigW
 The results of `min`, `max`, and `mean` should be the same as those from `BigWigSummary`. `std` and `coverage`, however, may differ due to Kent's tools producing incorrect results (at least for `coverage`, though the same appears to be the case for `std`).
 
 #To do
- - [ ] Write methods for creating bigWig files (from bedGraph like input)
+ - [X] Write methods for creating bigWig files (from bedGraph like input)
+ - [X] The number of zoom levels should be capped once we start repeating ourselves
+ - [X] My calculation of the mean expected node size seems VASTLY different from kent's, resulting in MUCH larger files...
  - [ ] Profile code, since this is likely slow in places.
  - [ ] Can the produced files be used by Kent's tools/IGV/etc.
  - [ ] Clean up the API, which is still sort of a mess.

@@ -274,6 +274,7 @@ static void bwDestroyWriteBuffer(bwWriteBuffer_t *wb) {
     if(wb->compressP) free(wb->compressP);
     if(wb->firstZoomBuffer) free(wb->firstZoomBuffer);
     if(wb->lastZoomBuffer) free(wb->lastZoomBuffer);
+    if(wb->nNodes) free(wb->nNodes);
     free(wb);
 }
 

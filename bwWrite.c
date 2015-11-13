@@ -770,6 +770,8 @@ int makeZoomLevels(bigWigFile_t *fp) {
     uint16_t nLevels = 0;
 
     meanBinSize = ((double) fp->writeBuffer->runningWidthSum)/(fp->writeBuffer->nEntries);
+    //In reality, one level is skipped
+    meanBinSize *= 4;
     //N.B., we must ALWAYS check that the zoom doesn't overflow a uint32_t!
     if(((uint32_t)-1)>>2 < meanBinSize) return 0; //No zoom levels!
     if(meanBinSize*4 > zoom) zoom = multiplier*meanBinSize;
@@ -789,6 +791,7 @@ int makeZoomLevels(bigWigFile_t *fp) {
         fp->hdr->zoomHdrs->level[i] = zoom;
         nLevels++;
         if(((uint32_t)-1)/multiplier < zoom) break;
+        zoom *= multiplier;
     }
     fp->hdr->nLevels = nLevels;
 
@@ -796,6 +799,7 @@ int makeZoomLevels(bigWigFile_t *fp) {
     if(!fp->writeBuffer->firstZoomBuffer) goto error;
     fp->writeBuffer->lastZoomBuffer = calloc(nLevels,sizeof(bwZoomBuffer_t*));
     if(!fp->writeBuffer->lastZoomBuffer) goto error;
+    fp->writeBuffer->nNodes = calloc(nLevels, sizeof(uint64_t));
 
     for(i=0; i<fp->hdr->nLevels; i++) {
         fp->writeBuffer->firstZoomBuffer[i] = calloc(1, sizeof(bwZoomBuffer_t));
@@ -823,6 +827,7 @@ error:
         free(fp->writeBuffer->firstZoomBuffer);
     }
     if(fp->writeBuffer->lastZoomBuffer) free(fp->writeBuffer->lastZoomBuffer);
+    if(fp->writeBuffer->nNodes) free(fp->writeBuffer->lastZoomBuffer);
     return 6;
 }
 
@@ -906,7 +911,7 @@ uint32_t updateInterval(bigWigFile_t *fp, bwZoomBuffer_t *buffer, uint32_t size,
 }
 
 //Returns 0 on success
-int addIntervalValue(bigWigFile_t *fp, bwZoomBuffer_t *buffer, uint32_t itemsPerSlot, uint32_t zoom, uint32_t tid, uint32_t start, uint32_t end, float value) {
+int addIntervalValue(bigWigFile_t *fp, uint64_t *nEntries, bwZoomBuffer_t *buffer, uint32_t itemsPerSlot, uint32_t zoom, uint32_t tid, uint32_t start, uint32_t end, float value) {
     bwZoomBuffer_t *newBuffer = NULL;
     uint32_t rv;
 
@@ -926,6 +931,7 @@ int addIntervalValue(bigWigFile_t *fp, bwZoomBuffer_t *buffer, uint32_t itemsPer
             if(!rv) goto error;
             buffer->next = newBuffer;
             buffer = buffer->next;
+            *nEntries += 1;
         }
         start += rv;
     }
@@ -950,7 +956,7 @@ int constructZoomLevels(bigWigFile_t *fp) {
         if(!intervals) goto error;
         for(j=0; j<intervals->l; j++) {
             for(k=0; k<fp->hdr->nLevels; k++) {
-                if(addIntervalValue(fp, fp->writeBuffer->lastZoomBuffer[k], fp->hdr->bufSize/32, fp->hdr->zoomHdrs->level[k], i, intervals->start[j], intervals->end[j], intervals->value[j])) goto error;
+                if(addIntervalValue(fp, &(fp->writeBuffer->nNodes[k]), fp->writeBuffer->lastZoomBuffer[k], fp->hdr->bufSize/32, fp->hdr->zoomHdrs->level[k], i, intervals->start[j], intervals->end[j], intervals->value[j])) goto error;
                 while(fp->writeBuffer->lastZoomBuffer[k]->next) fp->writeBuffer->lastZoomBuffer[k] = fp->writeBuffer->lastZoomBuffer[k]->next;
             }
         }
@@ -975,6 +981,7 @@ int writeZoomLevels(bigWigFile_t *fp) {
     uint64_t offset1, offset2, idxSize = 0;
     uint32_t i, j, four = 0, last, vector[6] = {0, 0, 0, 0, 0, 0}; //The last 8 bytes are left as 0;
     uint8_t wrote, one = 0;
+    uint16_t actualNLevels = 0;
     int rv;
     bwLL *ll, *p;
     bwRTreeNode_t *root;
@@ -983,6 +990,12 @@ int writeZoomLevels(bigWigFile_t *fp) {
     uLongf sz;
 
     for(i=0; i<fp->hdr->nLevels; i++) {
+        if(i) {
+            //Is this a duplicate level?
+            if(fp->writeBuffer->nNodes[i] == fp->writeBuffer->nNodes[i-1]) break;
+        }
+        actualNLevels++;
+
         //reserve a uint32_t for the number of blocks
         fp->hdr->zoomHdrs->dataOffset[i] = bwTell(fp);
         fp->writeBuffer->nBlocks = 0;
@@ -1098,13 +1111,18 @@ int writeZoomLevels(bigWigFile_t *fp) {
     offset1 = bwTell(fp);
     if(bwSetPos(fp, 0x40)) return 7;
     four = 0;
-    for(i=0; i<fp->hdr->nLevels; i++) {
+    for(i=0; i<actualNLevels; i++) {
         if(fwrite(&(fp->hdr->zoomHdrs->level[i]), sizeof(uint32_t), 1, fp->URL->x.fp) != 1) return 8;
         if(fwrite(&four, sizeof(uint32_t), 1, fp->URL->x.fp) != 1) return 9;
         if(fwrite(&(fp->hdr->zoomHdrs->dataOffset[i]), sizeof(uint64_t), 1, fp->URL->x.fp) != 1) return 10;
         if(fwrite(&(fp->hdr->zoomHdrs->indexOffset[i]), sizeof(uint64_t), 1, fp->URL->x.fp) != 1) return 11;
     }
-    if(bwSetPos(fp, offset1)) return 12;
+
+    //Write the number of levels if needed
+    if(bwSetPos(fp, 0x6)) return 12;
+    if(fwrite(&actualNLevels, sizeof(uint16_t), 1, fp->URL->x.fp) != 1) return 13;
+
+    if(bwSetPos(fp, offset1)) return 14;
 
     return 0;
 }
@@ -1138,8 +1156,7 @@ int bwFinalize(bigWigFile_t *fp) {
         if(makeZoomLevels(fp)) return 5;
         if(constructZoomLevels(fp)) return 6;
         bwSetPos(fp, offset);
-        if(writeZoomLevels(fp)) return 7;
-        if(writeAtPos(&(fp->hdr->nLevels), sizeof(uint16_t), 1, 0x6, fp->URL->x.fp)) return 8;
+        if(writeZoomLevels(fp)) return 7; //This write nLevels as well
     }
 
     //write magic at the end of the file
