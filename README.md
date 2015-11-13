@@ -60,6 +60,8 @@ The results of `min`, `max`, and `mean` should be the same as those from `BigWig
 
 #To do
  - [X] Write methods for creating bigWig files (from bedGraph like input)
+   - [ ] Ensure the output can be read by IGV
+   - [ ] Ensure the output can be read by Kent's tools and produces the same results (or close enough)
  - [X] The number of zoom levels should be capped once we start repeating ourselves
  - [X] My calculation of the mean expected node size seems VASTLY different from kent's, resulting in MUCH larger files...
  - [ ] Profile code, since this is likely slow in places.
