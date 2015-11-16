@@ -344,7 +344,7 @@ static void updateStats(bigWigFile_t *fp, uint32_t span, float val) {
 
 //12 bytes per entry
 int bwAddIntervals(bigWigFile_t *fp, char **chrom, uint32_t *start, uint32_t *end, float *values, uint32_t n) {
-    uint32_t tid, i;
+    uint32_t tid = 0, i;
     char *lastChrom = NULL;
     bwWriteBuffer_t *wb = fp->writeBuffer;
     if(!n) return 0; //Not an error per se
@@ -360,6 +360,8 @@ int bwAddIntervals(bigWigFile_t *fp, char **chrom, uint32_t *start, uint32_t *en
     if(tid != wb->tid) {
         if(flushBuffer(fp)) return 6;
         wb->tid = tid;
+        wb->start = start[0];
+        wb->end = end[0];
     }
 
     //Ensure that everything is set correctly
