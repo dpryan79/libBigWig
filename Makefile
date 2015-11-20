@@ -2,7 +2,7 @@ CC = gcc
 AR = ar
 RANLIB = ranlib
 CFLAGS = -g -Wall #-O3
-LIBS = -lcurl
+LIBS = -lcurl -lm
 EXTRA_CFLAGS_PIC = -fpic
 LDFLAGS =
 LDLIBS =
@@ -41,7 +41,7 @@ libBigWig.a: $(OBJS)
 	$(RANLIB) $@
 
 libBigWig.so: $(OBJS:.o=.pico)
-	$(CC) -shared $(LDFLAGS) -o $@ $(OBJS:.o=.pico) $(LDLIBS) -lcurl
+	$(CC) -shared $(LDFLAGS) -o $@ $(OBJS:.o=.pico) $(LDLIBS) $(LIBS)
 
 test/testLocal: libBigWig.a
 	gcc -o $@ -I. $(CFLAGS) test/testLocal.c libBigWig.a -lcurl -lz -lm

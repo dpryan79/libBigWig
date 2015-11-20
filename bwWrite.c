@@ -1062,6 +1062,7 @@ int writeZoomLevels(bigWigFile_t *fp) {
         fp->hdr->zoomHdrs->idx[i]->rootOffset = bwTell(fp);
 
         //Write the root node, since writeIndexTree writes the children and fills in the offset
+        offset1 = bwTell(fp);
         if(fwrite(&(root->isLeaf), sizeof(uint8_t), 1, fp->URL->x.fp) != 1) return 16;
         if(fwrite(&one, sizeof(uint8_t), 1, fp->URL->x.fp) != 1) return 17; //one byte of padding
         if(fwrite(&(root->nChildren), sizeof(uint16_t), 1, fp->URL->x.fp) != 1) return 18;
@@ -1080,7 +1081,6 @@ int writeZoomLevels(bigWigFile_t *fp) {
             }
         }
 
-        offset1 = bwTell(fp);
         while((rv = writeIndexTreeNode(fp->URL->x.fp, fp->hdr->zoomHdrs->idx[i]->root, &wrote, 0)) == 0) {
             if(!wrote) break;
             wrote = 0;

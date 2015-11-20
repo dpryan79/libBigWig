@@ -88,7 +88,7 @@ static struct vals_t *getVals(bigWigFile_t *fp, bwOverlapBlock_t *o, int i, uint
     if(bwRead(compBuf, o->size[i], 1, fp) != 1) goto error;
     if(compressed) {
         sz = fp->hdr->bufSize;
-        rv = uncompress(buf, (uLongf *) &sz, compBuf, o->size[i]);
+        rv = uncompress(buf, &sz, compBuf, o->size[i]);
         if(rv != Z_OK) goto error;
     } else {
         buf = compBuf;
