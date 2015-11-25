@@ -869,7 +869,7 @@ uint32_t overlapsInterval(uint32_t tid0, uint32_t start0, uint32_t end0, uint32_
 }
 
 //Returns the number of bases of the interval written
-uint32_t updateInterval(bigWigFile_t *fp, bwZoomBuffer_t *buffer, uint32_t size, uint32_t tid, uint32_t start, uint32_t end, float value) {
+uint32_t updateInterval(bigWigFile_t *fp, bwZoomBuffer_t *buffer, double *sum, double *sumsq, uint32_t size, uint32_t tid, uint32_t start, uint32_t end, float value) {
     uint32_t *p2 = (uint32_t*) buffer->p;
     float *fp2 = (float*) p2;
     uint32_t rv = 0, offset = 0;
@@ -877,48 +877,65 @@ uint32_t updateInterval(bigWigFile_t *fp, bwZoomBuffer_t *buffer, uint32_t size,
     if(buffer->l+32 >= buffer->m) return 0;
     if(buffer->l) {
         offset = buffer->l/32;
+    } else {
+        p2[0] = tid;
+        p2[1] = start;
+        if(start+size < end) p2[2] = start+size;
+        else p2[2] = end;
     }
+
     //Do we have any overlap with the previously added interval?
     if(offset) {
-        rv = overlapsInterval(p2[8*(offset-1)], p2[8*(offset-1)+1], p2[8*(offset-1)+2], tid, start, end);
+        rv = overlapsInterval(p2[8*(offset-1)], p2[8*(offset-1)+1], p2[8*(offset-1)+1] + size, tid, start, end);
         if(rv) {
+            p2[8*(offset-1)+2] = start + rv;
             p2[8*(offset-1)+3] += rv;
-            if(fp2[8*(offset-1)+4] < value) fp2[8*(offset-1)+4] = value;
-            if(fp2[8*(offset-1)+5] > value) fp2[8*(offset-1)+5] = value;
-            fp2[8*(offset-1)+6] += rv*value;
-            fp2[8*(offset-1)+7] += rv*pow(value, 2.0);
+            if(fp2[8*(offset-1)+4] > value) fp2[8*(offset-1)+4] = value;
+            if(fp2[8*(offset-1)+5] < value) fp2[8*(offset-1)+5] = value;
+            *sum += rv*value;
+            *sumsq += rv*pow(value, 2.0);
             return rv;
+        } else {
+            fp2[8*(offset-1)+6] = *sum;
+            fp2[8*(offset-1)+7] = *sumsq;
+            *sum = 0.0;
+            *sumsq = 0.0;
         }
     }
 
     //If we move to a new interval then skip iterating over a bunch of obviously non-overlapping intervals
     if(offset && p2[8*offset+2] == 0) {
-        p2[8*offset] = p2[8*(offset-1)];
-        p2[8*offset+1] = p2[8*(offset-1)+1];
-        p2[8*offset+2] = p2[8*(offset-1)+2];
-        nextPos(fp, size, p2+8*offset, tid);
+        p2[8*offset] = tid;
+        p2[8*offset+1] = start;
+        if(start+size < end) p2[8*offset+2] = start+size;
+        else p2[8*offset+2] = end;
+        //nextPos(fp, size, p2+8*offset, tid); //We can actually skip uncovered intervals
     }
 
     //Add a new entry
-    while(!(rv = overlapsInterval(p2[8*offset], p2[8*offset+1], p2[8*offset+2], tid, start, end))) {
-        nextPos(fp, size, p2+8*offset, tid);
+    while(!(rv = overlapsInterval(p2[8*offset], p2[8*offset+1], p2[8*offset+1] + size, tid, start, end))) {
+        p2[8*offset] = tid;
+        p2[8*offset+1] = start;
+        if(start+size < end) p2[8*offset+2] = start+size;
+        else p2[8*offset+2] = end;
+        //nextPos(fp, size, p2+8*offset, tid);
     }
     p2[8*offset+3] = rv;
     fp2[8*offset+4] = value; //min
     fp2[8*offset+5] = value; //max
-    fp2[8*offset+6] = rv * value; //sum
-    fp2[8*offset+7] = rv * pow(value,2.0); //sumSquared
+    *sum += rv * value;
+    *sumsq += rv * pow(value,2.0);
     buffer->l += 32;
     return rv;
 }
 
 //Returns 0 on success
-int addIntervalValue(bigWigFile_t *fp, uint64_t *nEntries, bwZoomBuffer_t *buffer, uint32_t itemsPerSlot, uint32_t zoom, uint32_t tid, uint32_t start, uint32_t end, float value) {
+int addIntervalValue(bigWigFile_t *fp, uint64_t *nEntries, double *sum, double *sumsq, bwZoomBuffer_t *buffer, uint32_t itemsPerSlot, uint32_t zoom, uint32_t tid, uint32_t start, uint32_t end, float value) {
     bwZoomBuffer_t *newBuffer = NULL;
     uint32_t rv;
 
     while(start < end) {
-        rv = updateInterval(fp, buffer, zoom, tid, start, end, value);
+        rv = updateInterval(fp, buffer, sum, sumsq, zoom, tid, start, end, value);
         if(!rv) {
             //Allocate a new buffer
             newBuffer = calloc(1, sizeof(bwZoomBuffer_t));
@@ -929,7 +946,8 @@ int addIntervalValue(bigWigFile_t *fp, uint64_t *nEntries, bwZoomBuffer_t *buffe
             memcpy(newBuffer->p, buffer->p+buffer->l-32, 4);
             memcpy(newBuffer->p+4, buffer->p+buffer->l-28, 4);
             ((uint32_t*) newBuffer->p)[2] = ((uint32_t*) newBuffer->p)[1] + zoom;
-            rv = updateInterval(fp, newBuffer, zoom, tid, start, end, value);
+            *sum = *sumsq = 0.0;
+            rv = updateInterval(fp, newBuffer, sum, sumsq, zoom, tid, start, end, value);
             if(!rv) goto error;
             buffer->next = newBuffer;
             buffer = buffer->next;
@@ -951,14 +969,19 @@ error:
 //Get all of the intervals and add them to the appropriate zoomBuffer
 int constructZoomLevels(bigWigFile_t *fp) {
     bwOverlappingIntervals_t *intervals = NULL;
+    double *sum = NULL, *sumsq = NULL;
     uint32_t i, j, k;
+
+    sum = calloc(fp->hdr->nLevels, sizeof(double));
+    sumsq = calloc(fp->hdr->nLevels, sizeof(double));
+    if(!sum || !sumsq) goto error;
 
     for(i=0; i<fp->cl->nKeys; i++) {
         intervals = bwGetOverlappingIntervals(fp, fp->cl->chrom[i], 0, fp->cl->len[i]);
         if(!intervals) goto error;
         for(j=0; j<intervals->l; j++) {
             for(k=0; k<fp->hdr->nLevels; k++) {
-                if(addIntervalValue(fp, &(fp->writeBuffer->nNodes[k]), fp->writeBuffer->lastZoomBuffer[k], fp->hdr->bufSize/32, fp->hdr->zoomHdrs->level[k], i, intervals->start[j], intervals->end[j], intervals->value[j])) goto error;
+                if(addIntervalValue(fp, &(fp->writeBuffer->nNodes[k]), sum+k, sumsq+k, fp->writeBuffer->lastZoomBuffer[k], fp->hdr->bufSize/32, fp->hdr->zoomHdrs->level[k], i, intervals->start[j], intervals->end[j], intervals->value[j])) goto error;
                 while(fp->writeBuffer->lastZoomBuffer[k]->next) fp->writeBuffer->lastZoomBuffer[k] = fp->writeBuffer->lastZoomBuffer[k]->next;
             }
         }
@@ -972,10 +995,15 @@ int constructZoomLevels(bigWigFile_t *fp) {
         fp->hdr->zoomHdrs->idx[i]->blockSize = fp->writeBuffer->blockSize;
     }
 
+    free(sum);
+    free(sumsq);
+
     return 0;
 
 error:
     if(intervals) bwDestroyOverlappingIntervals(intervals);
+    if(sum) free(sum);
+    if(sumsq) free(sumsq);
     return 1;
 }
 
