@@ -1,6 +1,6 @@
-CC = gcc
-AR = ar
-RANLIB = ranlib
+CC ?= gcc
+AR ?= ar
+RANLIB ?= ranlib
 CFLAGS = -g -Wall -O3
 LIBS = -lcurl
 EXTRA_CFLAGS_PIC = -fpic
