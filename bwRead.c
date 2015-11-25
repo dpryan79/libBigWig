@@ -256,7 +256,7 @@ static chromList_t *bwReadChromList(bigWigFile_t *bw) {
     i = 0;
     while(i<itemCount) {
         rv = readChromBlock(bw, cl, keySize);
-        if(rv < 0) goto error;
+        if(rv == (uint64_t) -1) goto error;
         i += rv;
     }
 
