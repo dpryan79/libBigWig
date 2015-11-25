@@ -2,7 +2,7 @@ CC ?= gcc
 AR ?= ar
 RANLIB ?= ranlib
 CFLAGS = -g -Wall -O3
-LIBS = -lcurl
+LIBS = -lcurl -lz
 EXTRA_CFLAGS_PIC = -fpic
 LDFLAGS =
 LDLIBS =
@@ -41,13 +41,13 @@ libBigWig.a: $(OBJS)
 	$(RANLIB) $@
 
 libBigWig.so: $(OBJS:.o=.pico)
-	$(CC) -shared $(LDFLAGS) -o $@ $(OBJS:.o=.pico) $(LDLIBS) -lcurl
+	$(CC) -shared $(LDFLAGS) -o $@ $(OBJS:.o=.pico) $(LDLIBS) $(LIBS)
 
 test/testLocal: libBigWig.a
-	gcc -o $@ -I. $(CFLAGS) test/testLocal.c libBigWig.a -lcurl -lz -lm
+	$(CC) -o $@ -I. $(CFLAGS) test/testLocal.c libBigWig.a -lcurl -lz -lm
 
 test/testRemote: libBigWig.a
-	gcc -o $@ -I. $(CFLAGS) test/testRemote.c libBigWig.a -lcurl -lz -lm
+	$(CC) -o $@ -I. $(CFLAGS) test/testRemote.c libBigWig.a -lcurl -lz -lm
 
 test: test/testLocal test/testRemote
 	./test/testLocal test/test.bw
@@ -57,7 +57,7 @@ test: test/testLocal test/testRemote
 clean:
 	rm -f *.o libBigWig.a libBigWig.so *.pico test/testLocal test/testRemote
 
-install: libBigWig.a
+install: libBigWig.a libBigWig.so
 	install libBigWig.a $(prefix)/lib
 	install libBigWig.so $(prefix)/lib
 	install bigWig.h $(prefix)/include
