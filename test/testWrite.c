@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    if(bwCreateHdr(ofp, 10, 1)) goto error; //one zoom level, compressed
+    if(bwCreateHdr(ofp, 10)) goto error; //ten zoom levels
     ofp->cl = bwCreateChromList(ifp->cl->chrom, ifp->cl->len, ifp->cl->nKeys);
     if(!ofp->cl) goto error;
 

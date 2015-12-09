@@ -52,18 +52,23 @@ test/testRemote: libBigWig.a
 test/testWrite: libBigWig.a
 	gcc -o $@ -I. $(CFLAGS) test/testWrite.c libBigWig.a -lcurl -lz -lm
 
-test: test/testLocal test/testRemote test/testWrite
+test/exampleWrite: libBigWig.so
+	gcc -o $@ -I. -L. $(CFLAGS) test/exampleWrite.c -lBigWig -lcurl -lz -lm -Wl,-rpath .
+
+test: test/testLocal test/testRemote test/testWrite test/testLocal test/exampleWrite
 	./test/testLocal test/test.bw
 	./test/testRemote ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeCrgMapabilityAlign50mer.bigWig
 	./test/testRemote http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeCrgMapabilityAlign50mer.bigWig
 	./test/testWrite test/test.bw test/output.bw
 	./test/testLocal test/output.bw
-	rm -rf test/output.bw
+	rm -f test/output.bw
+	./test/exampleWrite
+	rm -f example_output.bw
 
 clean:
-	rm -f *.o libBigWig.a libBigWig.so *.pico test/testLocal test/testRemote test/testWrite
+	rm -f *.o libBigWig.a libBigWig.so *.pico test/testLocal test/testRemote test/testWrite test/exampleWrite example_output.bw
 
 install: libBigWig.a
 	install libBigWig.a $(prefix)/lib
 	install libBigWig.so $(prefix)/lib
-	install bigWig.h $(prefix)/include
+	install *.h $(prefix)/include

@@ -1146,6 +1146,18 @@ int writeZoomLevels(bigWigFile_t *fp) {
         fp->writeBuffer->firstZoomBuffer[i] = NULL;
     }
 
+    //Free unused zoom levels
+    for(i=actualNLevels; i<fp->hdr->nLevels; i++) {
+        zb = fp->writeBuffer->firstZoomBuffer[i];
+        while(zb) {
+            if(zb->p) free(zb->p);
+            zb2 = zb->next;
+            free(zb);
+            zb = zb2;
+        }
+        fp->writeBuffer->firstZoomBuffer[i] = NULL;
+    }
+
     //Write the zoom headers to disk
     offset1 = bwTell(fp);
     if(bwSetPos(fp, 0x40)) return 7;

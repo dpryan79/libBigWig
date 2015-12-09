@@ -56,7 +56,7 @@ The only functions and structures that end users need to care about are in "bigW
 
 ##Writing example
     #include "bigWig.h"
-
+    
     int main(int argc, char *argv[]) {
         bigWigFile_t *fp = NULL;
         char *chroms[] = {"1", "2"};
@@ -65,7 +65,7 @@ The only functions and structures that end users need to care about are in "bigW
         uint32_t starts[] = {0, 100, 125,
                              200, 220, 230,
                              500, 600, 625,
-                             700, 720, 740};
+                             700, 800, 850};
         uint32_t ends[] = {5, 120, 126,
                            205, 226, 231};
         float values[] = {0.0f, 1.0f, 200.0f,
@@ -74,31 +74,32 @@ The only functions and structures that end users need to care about are in "bigW
                           -2.0f, 150.0f, 25.0f,
                           -5.0f, -20.0f, 25.0f,
                           -5.0f, -20.0f, 25.0f};
-
+        
         if(bwInit(1<<17) != 0) {
             fprintf(stderr, "Received an error in bwInit\n");
             return 1;
         }
-
+    
         fp = bwOpen("example_output.bw", NULL, "w");
         if(!fp) {
             fprintf(stderr, "An error occurred while opening example_output.bw for writingn\n");
             return 1;
         }
-
+    
         //Allow up to 10 zoom levels, though fewer will be used in practice
         if(bwCreateHdr(fp, 10)) goto error;
-
+    
         //Create the chromosome lists
         fp->cl = bwCreateChromList(chroms, chrLens, 2);
         if(!fp->cl) goto error;
-
+    
         //Write the header
         if(bwWriteHdr(fp)) goto error;
-
+    
         //Some example bedGraph-like entries
         if(bwAddIntervals(fp, chromsUse, starts, ends, values, 3)) goto error;
         //We can continue appending similarly formatted entries
+        //N.B. you can't append a different chromosome (those always go into different
         if(bwAppendIntervals(fp, starts+3, ends+3, values+3, 3)) goto error;
     
         //Add a new block of entries with a span. Since bwAdd/AppendIntervals was just used we MUST create a new block
@@ -107,9 +108,15 @@ The only functions and structures that end users need to care about are in "bigW
         if(bwAppendIntervalSpans(fp, starts+9, values+9, 3)) goto error;
     
         //Add a new block of fixed-step entries
-        if(bwAddIntervalSpanSteps(fp, "1", 700, 20, 30, values+12, 3)) goto error;
+        if(bwAddIntervalSpanSteps(fp, "1", 900, 20, 30, values+12, 3)) goto error;
         //The start is then 760, since that's where the previous step ended
         if(bwAppendIntervalSpanSteps(fp, values+15, 3)) goto error;
+
+        //Add a new chromosome
+        chromsUse[0] = "2";
+        chromsUse[1] = "2";
+        chromsUse[2] = "2";
+        if(bwAddIntervals(fp, chromsUse, starts, ends, values, 3)) goto error;
     
         //Closing the file causes the zoom levels to be created
         bwClose(fp);
@@ -129,10 +136,5 @@ The only functions and structures that end users need to care about are in "bigW
 The results of `min`, `max`, and `mean` should be the same as those from `BigWigSummary`. `std` and `coverage`, however, may differ due to Kent's tools producing incorrect results (at least for `coverage`, though the same appears to be the case for `std`).
 
 #To do
- - [X] Write methods for creating bigWig files (from bedGraph like input)
-   - [X] Ensure the output can be read by IGV
-   - [X] Ensure the output can be read by Kent's tools and produces the same results (or close enough)
- - [X] The number of zoom levels should be capped once we start repeating ourselves
- - [X] My calculation of the mean expected node size seems VASTLY different from kent's, resulting in MUCH larger files...
  - [ ] Profile code, since this is likely slow in places.
- - [X] Run valgrind on everything
+ - [ ] Restructure the headers so there's only one that needs to be included/installed.
