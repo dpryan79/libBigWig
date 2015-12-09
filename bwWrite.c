@@ -409,6 +409,7 @@ int bwAppendIntervals(bigWigFile_t *fp, uint32_t *start, uint32_t *end, float *v
     if(!n) return 0;
     if(!fp->isWrite) return 1;
     if(!wb) return 2;
+    if(wb->ltype != 1) return 3;
 
     for(i=0; i<n; i++) {
         if(wb->l+12 > fp->hdr->bufSize) {
@@ -418,9 +419,9 @@ int bwAppendIntervals(bigWigFile_t *fp, uint32_t *start, uint32_t *end, float *v
             flushBuffer(fp);
             wb->start = start[i];
         }
-        if(!memcpy(wb->p+wb->l, &(start[i]), sizeof(uint32_t))) return 11;
-        if(!memcpy(wb->p+wb->l+4, &(end[i]), sizeof(uint32_t))) return 12;
-        if(!memcpy(wb->p+wb->l+8, &(values[i]), sizeof(float))) return 13;
+        if(!memcpy(wb->p+wb->l, &(start[i]), sizeof(uint32_t))) return 4;
+        if(!memcpy(wb->p+wb->l+4, &(end[i]), sizeof(uint32_t))) return 5;
+        if(!memcpy(wb->p+wb->l+8, &(values[i]), sizeof(float))) return 6;
         updateStats(fp, end[i]-start[i], values[i]);
         wb->l += 12;
     }
@@ -436,14 +437,16 @@ int bwAddIntervalSpans(bigWigFile_t *fp, char *chrom, uint32_t *start, uint32_t 
     if(!n) return 0;
     if(!fp->isWrite) return 1;
     if(!wb) return 2;
-    if(flushBuffer(fp)) return 3;
+    if(wb->ltype != 2) if(flushBuffer(fp)) return 3;
+    if(flushBuffer(fp)) return 4;
 
     tid = bwGetTid(fp, chrom);
-    if(tid == -1) return 4;
+    if(tid == -1) return 5;
     wb->tid = tid;
     wb->start = start[0];
     wb->step = 0;
     wb->span = span;
+    wb->ltype = 2;
 
     for(i=0; i<n; i++) {
         if(wb->l + 8 >= fp->hdr->bufSize) { //8 bytes/entry
@@ -466,14 +469,15 @@ int bwAppendIntervalSpans(bigWigFile_t *fp, uint32_t *start, float *values, uint
     if(!n) return 0;
     if(!fp->isWrite) return 1;
     if(!wb) return 2;
+    if(wb->ltype != 2) return 3;
 
     for(i=0; i<n; i++) {
         if(wb->l + 8 >= fp->hdr->bufSize) {
             if(i) wb->end = start[i-1]+wb->span;
             flushBuffer(fp);
         }
-        if(!memcpy(wb->p+wb->l, &(start[i]), sizeof(uint32_t))) return 3;
-        if(!memcpy(wb->p+wb->l+4, &(values[i]), sizeof(float))) return 4;
+        if(!memcpy(wb->p+wb->l, &(start[i]), sizeof(uint32_t))) return 4;
+        if(!memcpy(wb->p+wb->l+4, &(values[i]), sizeof(float))) return 5;
         updateStats(fp, wb->span, values[i]);
         wb->l += 8;
     }
@@ -489,6 +493,7 @@ int bwAddIntervalSpanSteps(bigWigFile_t *fp, char *chrom, uint32_t start, uint32
     if(!n) return 0;
     if(!fp->isWrite) return 1;
     if(!wb) return 2;
+    if(wb->ltype != 3) flushBuffer(fp);
     if(flushBuffer(fp)) return 3;
 
     tid = bwGetTid(fp, chrom);
@@ -497,6 +502,7 @@ int bwAddIntervalSpanSteps(bigWigFile_t *fp, char *chrom, uint32_t start, uint32
     wb->start = start;
     wb->step = step;
     wb->span = span;
+    wb->ltype = 3;
 
     for(i=0; i<n; i++) {
         if(wb->l + 4 >= fp->hdr->bufSize) {
@@ -506,8 +512,9 @@ int bwAddIntervalSpanSteps(bigWigFile_t *fp, char *chrom, uint32_t start, uint32
         }
         if(!memcpy(wb->p+wb->l, &(values[i]), sizeof(float))) return 5;
         updateStats(fp, wb->span, values[i]);
+        wb->l += 4;
     }
-    wb->end = wb->start + (wb->l>>2) + step;
+    wb->end = wb->start + (wb->l>>2) * step;
 
     return 0;
 }
@@ -518,6 +525,7 @@ int bwAppendIntervalSpanSteps(bigWigFile_t *fp, float *values, uint32_t n) {
     if(!n) return 0;
     if(!fp->isWrite) return 1;
     if(!wb) return 2;
+    if(wb->ltype != 3) return 3;
 
     for(i=0; i<n; i++) {
         if(wb->l + 4 >= fp->hdr->bufSize) {
@@ -525,10 +533,11 @@ int bwAppendIntervalSpanSteps(bigWigFile_t *fp, float *values, uint32_t n) {
             flushBuffer(fp);
             wb->start = wb->end;
         }
-        if(!memcpy(wb->p+wb->l, &(values[i]), sizeof(float))) return 3;
+        if(!memcpy(wb->p+wb->l, &(values[i]), sizeof(float))) return 4;
         updateStats(fp, wb->span, values[i]);
+        wb->l += 4;
     }
-    wb->end = wb->start + (wb->l>>2) + wb->step;
+    wb->end = wb->start + (wb->l>>2) * wb->step;
 
     return 0;
 }
