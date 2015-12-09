@@ -7,3 +7,5 @@ test/testLocal
 test/testRemote
 test/testWrite
 test/output.bw
+example_output.bw
+test/exampleWrite
