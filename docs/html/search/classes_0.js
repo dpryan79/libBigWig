@@ -7,5 +7,6 @@ var searchData=
   ['bwoverlappingintervals_5ft',['bwOverlappingIntervals_t',['../structbwOverlappingIntervals__t.html',1,'']]],
   ['bwrtree_5ft',['bwRTree_t',['../structbwRTree__t.html',1,'']]],
   ['bwrtreenode_5ft',['bwRTreeNode_t',['../structbwRTreeNode__t.html',1,'']]],
+  ['bwwritebuffer_5ft',['bwWriteBuffer_t',['../structbwWriteBuffer__t.html',1,'']]],
   ['bwzoomhdr_5ft',['bwZoomHdr_t',['../structbwZoomHdr__t.html',1,'']]]
 ];

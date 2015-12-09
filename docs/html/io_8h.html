@@ -116,9 +116,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a55a1fcb43f68a2b3c3a2b66a6459a0a8"><td class="memItemLeft" align="right" valign="top">CURLcode&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="io_8h.html#a55a1fcb43f68a2b3c3a2b66a6459a0a8">urlSeek</a> (<a class="el" href="structURL__t.html">URL_t</a> *URL, size_t pos)</td></tr>
 <tr class="memdesc:a55a1fcb43f68a2b3c3a2b66a6459a0a8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Seeks to a given position in a local or remote file.  <a href="#a55a1fcb43f68a2b3c3a2b66a6459a0a8">More...</a><br/></td></tr>
 <tr class="separator:a55a1fcb43f68a2b3c3a2b66a6459a0a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa62a4e797407133f1d43d949b3c132e8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structURL__t.html">URL_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="io_8h.html#aa62a4e797407133f1d43d949b3c132e8">urlOpen</a> (char *fname, CURLcode(*callBack)(CURL *))</td></tr>
-<tr class="memdesc:aa62a4e797407133f1d43d949b3c132e8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Open a local or remote file.  <a href="#aa62a4e797407133f1d43d949b3c132e8">More...</a><br/></td></tr>
-<tr class="separator:aa62a4e797407133f1d43d949b3c132e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8583139627ed0a732e6d9b4f80231c87"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structURL__t.html">URL_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="io_8h.html#a8583139627ed0a732e6d9b4f80231c87">urlOpen</a> (char *fname, CURLcode(*callBack)(CURL *), const char *mode)</td></tr>
+<tr class="memdesc:a8583139627ed0a732e6d9b4f80231c87"><td class="mdescLeft">&#160;</td><td class="mdescRight">Open a local or remote file.  <a href="#a8583139627ed0a732e6d9b4f80231c87">More...</a><br/></td></tr>
+<tr class="separator:a8583139627ed0a732e6d9b4f80231c87"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:add8705cdab8e6f2193a50bf095f08470"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="io_8h.html#add8705cdab8e6f2193a50bf095f08470">urlClose</a> (<a class="el" href="structURL__t.html">URL_t</a> *URL)</td></tr>
 <tr class="memdesc:add8705cdab8e6f2193a50bf095f08470"><td class="mdescLeft">&#160;</td><td class="mdescRight">Close a local/remote file.  <a href="#add8705cdab8e6f2193a50bf095f08470">More...</a><br/></td></tr>
 <tr class="separator:add8705cdab8e6f2193a50bf095f08470"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -171,7 +171,7 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="aa62a4e797407133f1d43d949b3c132e8"></a>
+<a class="anchor" id="a8583139627ed0a732e6d9b4f80231c87"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -185,7 +185,13 @@ Variables</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">CURLcode(*)(CURL *)&#160;</td>
-          <td class="paramname"><em>callBack</em>&#160;</td>
+          <td class="paramname"><em>callBack</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>mode</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -198,11 +204,12 @@ Variables</h2></td></tr>
 <p>Open a local or remote file. </p>
 <p>Opens a local or remote file. Currently, http, https, and ftp are the only supported protocols and the URL must then begin with "http://", "https://", or "ftp://" as appropriate.</p>
 <p>For remote files, an internal buffer is used to hold file contents, to avoid downloading entire files before starting. The size of this buffer and various variable related to connection timeout are set with <a class="el" href="bigWig_8h.html#a4aa7fa5e6146a2719feb8815c9bccd62" title="Initializes curl and global variables. This MUST be called before other functions (at least if you wa...">bwInit()</a>.</p>
-<p>Note that you <b>must</b> run <a class="el" href="io_8h.html#add8705cdab8e6f2193a50bf095f08470" title="Close a local/remote file. ">urlClose()</a> on this when finished. However, you would typically just use <a class="el" href="bigWig_8h.html#a4bf93717d68206cb5084e5699fe30aee" title="Opens a local or remote bigWig file. This will open a local or remote bigWig file. ">bwOpen()</a> rather than directly calling this function.</p>
+<p>Note that you <b>must</b> run <a class="el" href="io_8h.html#add8705cdab8e6f2193a50bf095f08470" title="Close a local/remote file. ">urlClose()</a> on this when finished. However, you would typically just use <a class="el" href="bigWig_8h.html#a55e46bf04f13da31a3971044b85c9243" title="Opens a local or remote bigWig file. This will open a local or remote bigWig file. ">bwOpen()</a> rather than directly calling this function.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">fname</td><td>The file name or URL to open. </td></tr>
-    <tr><td class="paramname">callBack</td><td>An optional user-supplied function. This is applied to remote connections so users can specify things like proxy and password information.</td></tr>
+    <tr><td class="paramname">callBack</td><td>An optional user-supplied function. This is applied to remote connections so users can specify things like proxy and password information. </td></tr>
+    <tr><td class="paramname">mode</td><td>"r", "w" or NULL. If and only if the mode contains the character "w" will the file be opened for writing.</td></tr>
   </table>
   </dd>
 </dl>
@@ -309,7 +316,7 @@ Variables</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Sep 29 2015 11:53:31 for libBigWig by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 9 2015 14:57:55 for libBigWig by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

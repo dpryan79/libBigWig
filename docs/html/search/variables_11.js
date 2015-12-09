@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['x',['x',['../structbwRTreeNode__t.html#a5d4127fac68dc3dc91c1283f8102e100',1,'bwRTreeNode_t::x()'],['../structURL__t.html#ad063b18d976f45276ed3a014ac339e5f',1,'URL_t::x()']]]
+  ['value',['value',['../structbwOverlappingIntervals__t.html#a1945a25b881f5b94ecccaf57bb43291b',1,'bwOverlappingIntervals_t']]],
+  ['version',['version',['../structbigWigHdr__t.html#ac0c3543680ec2b5b40015421788981a6',1,'bigWigHdr_t']]]
 ];

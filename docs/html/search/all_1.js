@@ -7,6 +7,9 @@ var searchData=
   ['chromlist_5ft',['chromList_t',['../structchromList__t.html',1,'']]],
   ['cirtree_5fmagic',['CIRTREE_MAGIC',['../bigWig_8h.html#a3d7d5829abe177defc549aaddd59e121',1,'bigWig.h']]],
   ['cl',['cl',['../structbigWigFile__t.html#ac1afdee9f31c8e69dc2a902ee0605f78',1,'bigWigFile_t']]],
+  ['compressp',['compressP',['../structbwWriteBuffer__t.html#afd2828a43db06568f73e3d5d0055b7d5',1,'bwWriteBuffer_t']]],
+  ['compresspsz',['compressPsz',['../structbwWriteBuffer__t.html#a1418d0358e90eea7fda9cd51e90be8e5',1,'bwWriteBuffer_t']]],
   ['ctoffset',['ctOffset',['../structbigWigHdr__t.html#aac14ee0aaf38f8fc719600f0fb19533f',1,'bigWigHdr_t']]],
-  ['curl',['curl',['../structURL__t.html#a01844303c9bf15b823504dbdf8eecdc5',1,'URL_t']]]
+  ['curl',['curl',['../structURL__t.html#a01844303c9bf15b823504dbdf8eecdc5',1,'URL_t']]],
+  ['currentindexnode',['currentIndexNode',['../structbwWriteBuffer__t.html#a4c00fb5d95db3f13cae4951bb1e128b1',1,'bwWriteBuffer_t']]]
 ];
