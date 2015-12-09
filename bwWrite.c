@@ -6,6 +6,7 @@
 #include "bigWig.h"
 #include "bwCommon.h"
 
+/// @cond SKIP
 struct val_t {
     uint32_t tid;
     uint32_t start;
@@ -14,6 +15,7 @@ struct val_t {
     double scalar;
     struct val_t *next;
 };
+/// @endcond
 
 //Create a chromList_t and attach it to a bigWigFile_t *. Returns NULL on error
 //Note that chroms and lengths are duplicated, so you MUST free the input
@@ -51,7 +53,7 @@ error:
 
 //If maxZooms == 0, then 0 is used (i.e., there are no zoom levels). If maxZooms < 0 or > 65535 then 10 is used.
 //TODO allow changing bufSize and blockSize
-int bwCreateHdr(bigWigFile_t *fp, int32_t maxZooms, int compress) {
+int bwCreateHdr(bigWigFile_t *fp, int32_t maxZooms) {
     if(!fp->isWrite) return 1;
     bigWigHdr_t *hdr = calloc(1, sizeof(bigWigHdr_t));
     if(!hdr) return 2;
@@ -70,11 +72,9 @@ int bwCreateHdr(bigWigFile_t *fp, int32_t maxZooms, int compress) {
     fp->writeBuffer->blockSize = 64;
 
     //Allocate the writeBuffer buffers
-    if(compress) {
-        fp->writeBuffer->compressPsz = compressBound(hdr->bufSize);
-        fp->writeBuffer->compressP = malloc(fp->writeBuffer->compressPsz);
-        if(!fp->writeBuffer->compressP) return 3;
-    }
+    fp->writeBuffer->compressPsz = compressBound(hdr->bufSize);
+    fp->writeBuffer->compressP = malloc(fp->writeBuffer->compressPsz);
+    if(!fp->writeBuffer->compressP) return 3;
     fp->writeBuffer->p = calloc(1,hdr->bufSize);
     if(!fp->writeBuffer->p) return 4;
 

@@ -21,6 +21,10 @@
  *
  *     make install prefix=/some/path
  *
+ * \section Writing bigWig files
+ *
+ * There are three methods for storing values in a bigWig file, further described in the [wiggle format](http://genome.ucsc.edu/goldenpath/help/wiggle.html). The entries within the file are grouped into "blocks" and each such block is limited to storing entries of a single type. So, it is unwise to use a single bedGraph-like endtry followed by a single fixed-step entry followed by a variable-step entry, as that would require three separate blocks, with additional space required for each.
+ *
  * \section Examples
  * 
  * Please see [README.md](README.md) and the files under `test/` for examples.
@@ -124,7 +128,8 @@ typedef struct {
     uint32_t *len; /**<The lengths of each chromosome */
 } chromList_t;
 
-//remove from bigWig.h
+//TODO remove from bigWig.h
+/// @cond SKIP
 typedef struct bwLL bwLL;
 struct bwLL {
     bwRTreeNode_t *node;
@@ -136,6 +141,7 @@ struct bwZoomBuffer_t { //each individual entry takes 32 bytes
     uint32_t l, m;
     struct bwZoomBuffer_t *next;
 };
+/// @endcond
 
 /*!
  * @brief This is only needed for writing bigWig files (and won't be created otherwise)
@@ -206,7 +212,7 @@ void bwCleanup(void);
  * This will open a local or remote bigWig file.
  * @param fname The file name or URL (http, https, and ftp are supported)
  * @param callBack An optional user-supplied function. This is applied to remote connections so users can specify things like proxy and password information. See `test/testRemote` for an example.
- * @param The mode, by default "r". Both local and remote files can be read, but only local files can be written. For files being written the callback function is ignored. If and only if the mode contains "w" will the file be opened for writing (in all other cases the file will be opened for reading.
+ * @param mode The mode, by default "r". Both local and remote files can be read, but only local files can be written. For files being written the callback function is ignored. If and only if the mode contains "w" will the file be opened for writing (in all other cases the file will be opened for reading.
  * @return A bigWigFile_t * on success and NULL on error.
  */
 bigWigFile_t *bwOpen(char *fname, CURLcode (*callBack)(CURL*), const char* mode);
@@ -287,12 +293,11 @@ double *bwStats(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end, uin
 /*!
  * @brief Create a largely empty bigWig header
  * Every bigWig file has a header, this creates the template for one. It also takes care of space allocation in the output write buffer.
- * @param bigWigFile_t The bigWigFile_t* that you want to write to.
+ * @param fp The bigWigFile_t* that you want to write to.
  * @param maxZooms The maximum number of zoom levels. If you specify 0 then there will be no zoom levels. A value <0 or > 65535 will result in a maximum of 10.
- * @param compress 0: Do not compress blocks, 1: compress blocks. In truth, anything other than 0 is the same as 1.
  * @return 0 on success.
  */
-int bwCreateHdr(bigWigFile_t *fp, int32_t maxZooms, int compress);
+int bwCreateHdr(bigWigFile_t *fp, int32_t maxZooms);
 
 /*!
  * @brief Take a list of chromosome names and lengths and return a pointer to a chromList_t
@@ -313,9 +318,96 @@ chromList_t *bwCreateChromList(char **chroms, uint32_t *lengths, int64_t n);
  */
 int bwWriteHdr(bigWigFile_t *bw);
 
+/*!
+ * @brief Write a new block of bedGraph-like intervals to a bigWig file
+ * Adds entries of the form:
+ * chromosome	start	end	value
+ * to the file. These will always be added in a new block, so you may have previously used a different storage type.
+ * 
+ * In general it's more efficient to use the bwAppend* functions, but then you MUST know that the previously written block is of the same type. In other words, you can only use bwAppendIntervals() after bwAddIntervals() or a previous bwAppendIntervals().
+ * @param fp The output file pointer.
+ * @param chrom A list of chromosomes, of length `n`.
+ * @param start A list of start positions of length`n`.
+ * @param end A list of end positions of length`n`.
+ * @param values A list of values of length`n`.
+ * @param n The length of the aforementioned lists.
+ * @return 0 on success and another value on error.
+ * @see bwAppendIntervals
+ */
 int bwAddIntervals(bigWigFile_t *fp, char **chrom, uint32_t *start, uint32_t *end, float *values, uint32_t n);
+
+/*!
+ * @brief Append bedGraph-like intervals to a previous block of bedGraph-like intervals in a bigWig file.
+ * If you have previously used bwAddIntervals() then this will append additional entries into the previous block (or start a new one if needed).
+ * @param fp The output file pointer.
+ * @param start A list of start positions of length`n`.
+ * @param end A list of end positions of length`n`.
+ * @param values A list of values of length`n`.
+ * @param n The length of the aforementioned lists.
+ * @return 0 on success and another value on error.
+ * @warning Do NOT use this after `bwAddIntervalSpanSteps()`, `bwAppendIntervalSpanSteps()`, `bwAddIntervalSpanSteps()`, or `bwAppendIntervalSpanSteps()`.
+ * @see bwAddIntervals
+ */
 int bwAppendIntervals(bigWigFile_t *fp, uint32_t *start, uint32_t *end, float *values, uint32_t n);
+
+/*!
+ * @brief Add a new block of variable-step entries to a bigWig file
+ * Adds entries for the form
+ * chromosome	start	value
+ * to the file. Each block of such entries has an associated "span", so each value describes the region chromosome:start-(start+span)
+ *
+ * This will always start a new block of values.
+ * @param fp The output file pointer.
+ * @param chrom A list of chromosomes, of length `n`.
+ * @param start A list of start positions of length`n`.
+ * @param span The span of each entry (the must all be the same).
+ * @param values A list of values of length`n`.
+ * @param n The length of the aforementioned lists.
+ * @return 0 on success and another value on error.
+ * @see bwAppendIntervalSpans
+ */
 int bwAddIntervalSpans(bigWigFile_t *fp, char *chrom, uint32_t *start, uint32_t span, float *values, uint32_t n);
+
+/*!
+ * @brief Append to a previous block of variable-step entries.
+ * If you previously used `bwAddIntervalSpans()`, this will continue appending more values to the block(s) it created.
+ * @param fp The output file pointer.
+ * @param start A list of start positions of length`n`.
+ * @param values A list of values of length`n`.
+ * @param n The length of the aforementioned lists.
+ * @return 0 on success and another value on error.
+ * @warning Do NOT use this after `bwAddIntervals()`, `bwAppendIntervals()`, `bwAddIntervalSpanSteps()` or `bwAppendIntervalSpanSteps()`
+ * @see bwAddIntervalSpans
+ */
 int bwAppendIntervalSpans(bigWigFile_t *fp, uint32_t *start, float *values, uint32_t n);
+
+/*!
+ * @brief Add a new block of fixed-step entries to a bigWig file
+ * Adds entries for the form
+ * value
+ * to the file. Each block of such entries has an associated "span", "step", chromosome and start position. See the wiggle format for more details.
+ *
+ * This will always start a new block of values.
+ * @param fp The output file pointer.
+ * @param chrom The chromosome that the entries describe.
+ * @param start The starting position of the block of entries.
+ * @param span The span of each entry (i.e., the number of bases it describes).
+ * @param step The step between entry start positions.
+ * @param values A list of values of length`n`.
+ * @param n The length of the aforementioned lists.
+ * @return 0 on success and another value on error.
+ * @see bwAddIntervalSpanSteps
+ */
 int bwAddIntervalSpanSteps(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t span, uint32_t step, float *values, uint32_t n);
+
+/*!
+ * @brief Append to a previous block of fixed-step entries.
+ * If you previously used `bwAddIntervalSpanSteps()`, this will continue appending more values to the block(s) it created.
+ * @param fp The output file pointer.
+ * @param values A list of values of length`n`.
+ * @param n The length of the aforementioned lists.
+ * @return 0 on success and another value on error.
+ * @warning Do NOT use this after `bwAddIntervals()`, `bwAppendIntervals()`, `bwAddIntervalSpans()` or `bwAppendIntervalSpans()`
+ * @see bwAddIntervalSpanSteps
+ */
 int bwAppendIntervalSpanSteps(bigWigFile_t *fp, float *values, uint32_t n);
