@@ -1,8 +1,8 @@
-CC = gcc
-AR = ar
-RANLIB = ranlib
-CFLAGS = -g -Wall #-O3
-LIBS = -lcurl -lm
+CC ?= gcc
+AR ?= ar
+RANLIB ?= ranlib
+CFLAGS ?= -g -Wall -O3
+LIBS = -lcurl -lm -lz
 EXTRA_CFLAGS_PIC = -fpic
 LDFLAGS =
 LDLIBS =
@@ -44,16 +44,16 @@ libBigWig.so: $(OBJS:.o=.pico)
 	$(CC) -shared $(LDFLAGS) -o $@ $(OBJS:.o=.pico) $(LDLIBS) $(LIBS)
 
 test/testLocal: libBigWig.a
-	gcc -o $@ -I. $(CFLAGS) test/testLocal.c libBigWig.a -lcurl -lz -lm
+	$(CC) -o $@ -I. $(CFLAGS) test/testLocal.c libBigWig.a $(LIBS)
 
 test/testRemote: libBigWig.a
-	gcc -o $@ -I. $(CFLAGS) test/testRemote.c libBigWig.a -lcurl -lz -lm
+	$(CC) -o $@ -I. $(CFLAGS) test/testRemote.c libBigWig.a $(LIBS)
 
 test/testWrite: libBigWig.a
-	gcc -o $@ -I. $(CFLAGS) test/testWrite.c libBigWig.a -lcurl -lz -lm
+	$(CC) -o $@ -I. $(CFLAGS) test/testWrite.c libBigWig.a $(LIBS)
 
 test/exampleWrite: libBigWig.so
-	gcc -o $@ -I. -L. $(CFLAGS) test/exampleWrite.c -lBigWig -lcurl -lz -lm -Wl,-rpath .
+	$(CC) -o $@ -I. -L. $(CFLAGS) test/exampleWrite.c -lBigWig $(LIBS) -Wl,-rpath .
 
 test: test/testLocal test/testRemote test/testWrite test/testLocal test/exampleWrite
 	./test/testLocal test/test.bw
