@@ -67,7 +67,7 @@ test: test/testLocal test/testRemote test/testWrite test/testLocal test/exampleW
 clean:
 	rm -f *.o libBigWig.a libBigWig.so *.pico test/testLocal test/testRemote test/testWrite test/exampleWrite example_output.bw
 
-install: libBigWig.a
+install: libBigWig.a libBigWig.so
 	install libBigWig.a $(prefix)/lib
 	install libBigWig.so $(prefix)/lib
 	install *.h $(prefix)/include
