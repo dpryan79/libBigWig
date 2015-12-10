@@ -57,7 +57,6 @@ test/exampleWrite: libBigWig.so
 
 test: test/testLocal test/testRemote test/testWrite test/testLocal test/exampleWrite
 	./test/testLocal test/test.bw
-	./test/testRemote ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeCrgMapabilityAlign50mer.bigWig
 	./test/testRemote http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeCrgMapabilityAlign50mer.bigWig
 	./test/testWrite test/test.bw test/output.bw
 	./test/testLocal test/output.bw
