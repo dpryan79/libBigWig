@@ -57,6 +57,9 @@ The only functions and structures that end users need to care about are in "bigW
     }
 
 ##Writing example
+
+Below is an example of how to write bigWig files. You can also find this file under `test/exampleWrite.c`. Unlike with Kent's tools, you can create bigWig files entry by entry without needing an intermediate wiggle or bedGraph file. Entries in bigWig files are stored in blocks with each entry in a block referring to the same chromosome and having the same type, of which there are three (see the [wiggle specification](http://genome.ucsc.edu/goldenpath/help/wiggle.html) for more information on this).
+
     #include "bigWig.h"
     
     int main(int argc, char *argv[]) {
