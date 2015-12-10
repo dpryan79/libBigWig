@@ -151,7 +151,7 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>The size of each node on disk </p>
+<p>The maximum number of children a node can have </p>
 
 </div>
 </div>
@@ -190,7 +190,7 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>The size of the block of the file occupied by the index. This value isn't currently used. </p>
+<p>This is actually the offset of the index rather than the size?!? Yes, it's completely redundant. </p>
 
 </div>
 </div>
@@ -203,7 +203,7 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>The number of children that nodes can have </p>
+<p>The total number of data blocks pointed to by the tree. This is completely redundant. </p>
 
 </div>
 </div>
@@ -216,7 +216,7 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>The expected number of items per node. </p>
+<p>This is always 1! </p>
 
 </div>
 </div>
@@ -242,7 +242,7 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>The offset to the root node of the R-Tree (on disk). </p>
+<p>The offset to the root node of the R-Tree (on disk). Yes, this is redundant. </p>
 
 </div>
 </div>
@@ -252,7 +252,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Sep 29 2015 11:53:31 for libBigWig by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 9 2015 14:57:55 for libBigWig by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

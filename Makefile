@@ -1,8 +1,8 @@
 CC ?= gcc
 AR ?= ar
 RANLIB ?= ranlib
-CFLAGS = -g -Wall -O3
-LIBS = -lcurl -lz
+CFLAGS ?= -g -Wall -O3
+LIBS = -lcurl -lm -lz
 EXTRA_CFLAGS_PIC = -fpic
 LDFLAGS =
 LDLIBS =
@@ -27,7 +27,7 @@ lib-shared: libBigWig.so
 doc:
 	doxygen
 
-OBJS = io.o bwValues.o bwRead.o bwStats.o
+OBJS = io.o bwValues.o bwRead.o bwStats.o bwWrite.o
 
 .c.o:
 	$(CC) -I. $(CFLAGS) $(INCLUDES) -c -o $@ $<
@@ -44,20 +44,30 @@ libBigWig.so: $(OBJS:.o=.pico)
 	$(CC) -shared $(LDFLAGS) -o $@ $(OBJS:.o=.pico) $(LDLIBS) $(LIBS)
 
 test/testLocal: libBigWig.a
-	$(CC) -o $@ -I. $(CFLAGS) test/testLocal.c libBigWig.a -lcurl -lz -lm
+	$(CC) -o $@ -I. $(CFLAGS) test/testLocal.c libBigWig.a $(LIBS)
 
 test/testRemote: libBigWig.a
-	$(CC) -o $@ -I. $(CFLAGS) test/testRemote.c libBigWig.a -lcurl -lz -lm
+	$(CC) -o $@ -I. $(CFLAGS) test/testRemote.c libBigWig.a $(LIBS)
 
-test: test/testLocal test/testRemote
+test/testWrite: libBigWig.a
+	$(CC) -o $@ -I. $(CFLAGS) test/testWrite.c libBigWig.a $(LIBS)
+
+test/exampleWrite: libBigWig.so
+	$(CC) -o $@ -I. -L. $(CFLAGS) test/exampleWrite.c -lBigWig $(LIBS) -Wl,-rpath .
+
+test: test/testLocal test/testRemote test/testWrite test/testLocal test/exampleWrite
 	./test/testLocal test/test.bw
-	./test/testRemote ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeCrgMapabilityAlign50mer.bigWig
 	./test/testRemote http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeCrgMapabilityAlign50mer.bigWig
+	./test/testWrite test/test.bw test/output.bw
+	./test/testLocal test/output.bw
+	rm -f test/output.bw
+	./test/exampleWrite
+	rm -f example_output.bw
 
 clean:
-	rm -f *.o libBigWig.a libBigWig.so *.pico test/testLocal test/testRemote
+	rm -f *.o libBigWig.a libBigWig.so *.pico test/testLocal test/testRemote test/testWrite test/exampleWrite example_output.bw
 
 install: libBigWig.a libBigWig.so
 	install libBigWig.a $(prefix)/lib
 	install libBigWig.so $(prefix)/lib
-	install bigWig.h $(prefix)/include
+	install *.h $(prefix)/include

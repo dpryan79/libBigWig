@@ -70,7 +70,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -90,6 +90,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Data Fields</h2></td></tr>
+<tr class="memitem:ac1c58434f0397220d5c96af028a46556"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ac1c58434f0397220d5c96af028a46556"></a>
+uint32_t&#160;</td><td class="memItemRight" valign="bottom"><b>tid</b></td></tr>
+<tr class="separator:ac1c58434f0397220d5c96af028a46556"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a67f651169b8c11618ada237b5049f933"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a67f651169b8c11618ada237b5049f933"></a>
+uint32_t&#160;</td><td class="memItemRight" valign="bottom"><b>start</b></td></tr>
+<tr class="separator:a67f651169b8c11618ada237b5049f933"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a664e1bf9613172380bd532f3b627b634"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a664e1bf9613172380bd532f3b627b634"></a>
 uint32_t&#160;</td><td class="memItemRight" valign="bottom"><b>nBases</b></td></tr>
 <tr class="separator:a664e1bf9613172380bd532f3b627b634"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -105,14 +111,20 @@ float&#160;</td><td class="memItemRight" valign="bottom"><b>sum</b></td></tr>
 <tr class="memitem:a4ac798b7eddf14a99ea7a9822d974f17"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a4ac798b7eddf14a99ea7a9822d974f17"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>sumsq</b></td></tr>
 <tr class="separator:a4ac798b7eddf14a99ea7a9822d974f17"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3af94b65bc0de88b60f939367eb270d4"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a3af94b65bc0de88b60f939367eb270d4"></a>
+double&#160;</td><td class="memItemRight" valign="bottom"><b>scalar</b></td></tr>
+<tr class="separator:a3af94b65bc0de88b60f939367eb270d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a23d24f846dc4792eba2cb17d4339c8bd"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a23d24f846dc4792eba2cb17d4339c8bd"></a>
+struct <a class="el" href="structval__t.html">val_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>next</b></td></tr>
+<tr class="separator:a23d24f846dc4792eba2cb17d4339c8bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li>bwStats.c</li>
+<li>bwWrite.c</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 18 2015 16:16:04 for libBigWig by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 9 2015 14:43:09 for libBigWig by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

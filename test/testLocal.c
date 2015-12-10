@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    fp = bwOpen(argv[1], NULL);
+    fp = bwOpen(argv[1], NULL, "r");
     if(!fp) {
         fprintf(stderr, "An error occured while opening %s\n", argv[1]);
         return 1;

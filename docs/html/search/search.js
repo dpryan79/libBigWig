@@ -7,14 +7,14 @@
 
 var indexSectionsWithContent =
 {
-  0: "bcdefghilmnorstuvxz",
+  0: "bcdefghilmnoprstuvwxz",
   1: "bcu",
   2: "bi",
   3: "bu",
-  4: "bcdefghilmnorstuvxz",
+  4: "bcdefghilmnoprstuvwxz",
   5: "b",
   6: "b",
-  7: "bci",
+  7: "bcdil",
   8: "lr"
 };
 
