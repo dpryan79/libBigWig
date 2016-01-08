@@ -7,6 +7,7 @@
 //Print overly verbose header information
 void bwPrintHdr(bigWigFile_t *bw) {
     uint64_t i;
+    int64_t i64;
     printf("Version:    %"PRIu16"\n", bw->hdr->version);
     printf("Levels:     %"PRIu16"\n", bw->hdr->nLevels);
     printf("ctOffset:   0x%"PRIx64"\n", bw->hdr->ctOffset);
@@ -34,8 +35,8 @@ void bwPrintHdr(bigWigFile_t *bw) {
     if(bw->cl) {
         printf("Chromosome List\n");
         printf("  idx\tChrom\tLength (bases)\n");
-        for(i=0; i<bw->cl->nKeys; i++) {
-            printf("  %"PRIu64"\t%s\t%"PRIu32"\n", i, bw->cl->chrom[i], bw->cl->len[i]);
+        for(i64=0; i64<bw->cl->nKeys; i64++) {
+            printf("  %"PRIu64"\t%s\t%"PRIu32"\n", i64, bw->cl->chrom[i64], bw->cl->len[i64]);
         }
     }
 }
