@@ -99,11 +99,12 @@ static int writeChromList(FILE *fp, chromList_t *cl) {
     uint32_t nblocks = (cl->nKeys>>16)+1, keySize = 0, valSize = 8; //does the valSize even matter? I ignore it...
     uint64_t i, written = 0;
     uint8_t eight;
+    int64_t i64;
     char *chrom;
     size_t l;
 
-    for(i=0; i<cl->nKeys; i++) {
-        l = strlen(cl->chrom[i]);
+    for(i64=0; i64<cl->nKeys; i64++) {
+        l = strlen(cl->chrom[i64]);
         if(l>keySize) keySize = l;
     }
     l--; //We don't null terminate strings, because schiess mich tot
@@ -356,7 +357,7 @@ int bwAddIntervals(bigWigFile_t *fp, char **chrom, uint32_t *start, uint32_t *en
     if(wb->l+36 > fp->hdr->bufSize) if(flushBuffer(fp)) return 4;
     lastChrom = chrom[0];
     tid = bwGetTid(fp, chrom[0]);
-    if(tid == -1) return 5;
+    if(tid == (uint32_t) -1) return 5;
     if(tid != wb->tid) {
         if(flushBuffer(fp)) return 6;
         wb->tid = tid;
@@ -366,7 +367,7 @@ int bwAddIntervals(bigWigFile_t *fp, char **chrom, uint32_t *start, uint32_t *en
 
     //Ensure that everything is set correctly
     wb->ltype = 1;
-    if(!wb->l) {
+    if(wb->l <= 24) {
         wb->start = start[0];
         wb->span = 0;
         wb->step = 0;
@@ -383,7 +384,7 @@ int bwAddIntervals(bigWigFile_t *fp, char **chrom, uint32_t *start, uint32_t *en
             flushBuffer(fp);
             lastChrom = chrom[i];
             tid = bwGetTid(fp, chrom[i]);
-            if(tid == -1) return 10;
+            if(tid == (uint32_t) -1) return 10;
             wb->tid = tid;
             wb->start = start[i];
         }
@@ -441,7 +442,7 @@ int bwAddIntervalSpans(bigWigFile_t *fp, char *chrom, uint32_t *start, uint32_t 
     if(flushBuffer(fp)) return 4;
 
     tid = bwGetTid(fp, chrom);
-    if(tid == -1) return 5;
+    if(tid == (uint32_t) -1) return 5;
     wb->tid = tid;
     wb->start = start[0];
     wb->step = 0;
@@ -452,6 +453,7 @@ int bwAddIntervalSpans(bigWigFile_t *fp, char *chrom, uint32_t *start, uint32_t 
         if(wb->l + 8 >= fp->hdr->bufSize) { //8 bytes/entry
             if(i) wb->end = start[i-1]+span;
             flushBuffer(fp);
+            wb->start = start[i];
         }
         if(!memcpy(wb->p+wb->l, &(start[i]), sizeof(uint32_t))) return 5;
         if(!memcpy(wb->p+wb->l+4, &(values[i]), sizeof(float))) return 6;
@@ -475,6 +477,7 @@ int bwAppendIntervalSpans(bigWigFile_t *fp, uint32_t *start, float *values, uint
         if(wb->l + 8 >= fp->hdr->bufSize) {
             if(i) wb->end = start[i-1]+wb->span;
             flushBuffer(fp);
+            wb->start = start[i];
         }
         if(!memcpy(wb->p+wb->l, &(start[i]), sizeof(uint32_t))) return 4;
         if(!memcpy(wb->p+wb->l+4, &(values[i]), sizeof(float))) return 5;
@@ -497,7 +500,7 @@ int bwAddIntervalSpanSteps(bigWigFile_t *fp, char *chrom, uint32_t start, uint32
     if(flushBuffer(fp)) return 3;
 
     tid = bwGetTid(fp, chrom);
-    if(tid == -1) return 4;
+    if(tid == (uint32_t) -1) return 4;
     wb->tid = tid;
     wb->start = start;
     wb->step = step;
