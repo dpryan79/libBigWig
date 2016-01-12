@@ -367,7 +367,7 @@ int bwAddIntervals(bigWigFile_t *fp, char **chrom, uint32_t *start, uint32_t *en
 
     //Ensure that everything is set correctly
     wb->ltype = 1;
-    if(!wb->l) {
+    if(wb->l <= 24) {
         wb->start = start[0];
         wb->span = 0;
         wb->step = 0;
