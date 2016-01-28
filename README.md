@@ -1,4 +1,4 @@
-![Master build status](https://travis-ci.org/dpryan79/libBigWig.svg)
+![Master build status](https://travis-ci.org/dpryan79/libBigWig.svg) [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.45278.svg)](http://dx.doi.org/10.5281/zenodo.45278)
 
 A C library for reading/parsing local and remote BigWig files. While Kent's source code is free to use for these purposes, it's really inappropriate as library code since it has the unfortunate habit of calling `exit()` whenever there's an error. If that's then used inside of something like python then the python interpreter gets killed. This library is aimed at resolving these sorts of issues and should also use more standard things like curl and has a friendlier license to boot.
 
