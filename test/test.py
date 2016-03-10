@@ -26,9 +26,9 @@ assert(md5sum == "9ccecd6c32ff31042714c1da3c0d0eba")
 p1 = check_call(["./test/testWrite", "test/test.bw", "test/output.bw"])
 assert(p1 == 0)
 try:
-    p2 = Popen(["md5sum"], stdin=p1.stdout, stdout=PIPE)
+    p2 = Popen(["md5sum", "test/output.bw"], stdout=PIPE)
 except:
-    p2 = Popen(["md5"], stdin=p1.stdout, stdout=PIPE)
+    p2 = Popen(["md5", "test/output.bw"], stdout=PIPE)
 md5sum = p2.communicate()[0].strip().split()[0]
 assert(md5sum == "8e116bd114ffd2eb625011d451329c03")
 remove("test/output.bw")
@@ -37,9 +37,9 @@ remove("test/output.bw")
 p1 = check_call(["./test/exampleWrite"])
 assert(p1 == 0)
 try:
-    p2 = Popen(["md5sum"], stdin=p1.stdout, stdout=PIPE)
+    p2 = Popen(["md5sum", "test/example_output.bw"], stdout=PIPE)
 except:
-    p2 = Popen(["md5"], stdin=p1.stdout, stdout=PIPE)
+    p2 = Popen(["md5", "test/example_output.bw"], stdout=PIPE)
 md5sum = p2.communicate()[0].strip().split()[0]
 assert(md5sum == "ef104f198c6ce8310acc149d0377fc16")
 remove("test/example_output.bw")
