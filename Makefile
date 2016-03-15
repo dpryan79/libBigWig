@@ -56,13 +56,7 @@ test/exampleWrite: libBigWig.so
 	$(CC) -o $@ -I. -L. $(CFLAGS) test/exampleWrite.c -lBigWig $(LIBS) -Wl,-rpath .
 
 test: test/testLocal test/testRemote test/testWrite test/testLocal test/exampleWrite
-	./test/testLocal test/test.bw
-	./test/testRemote http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeCrgMapabilityAlign50mer.bigWig
-	./test/testWrite test/test.bw test/output.bw
-	./test/testLocal test/output.bw
-	rm -f test/output.bw
-	./test/exampleWrite
-	rm -f example_output.bw
+	./test/test.py
 
 clean:
 	rm -f *.o libBigWig.a libBigWig.so *.pico test/testLocal test/testRemote test/testWrite test/exampleWrite example_output.bw

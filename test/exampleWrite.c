@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    fp = bwOpen("example_output.bw", NULL, "w");
+    fp = bwOpen("test/example_output.bw", NULL, "w");
     if(!fp) {
         fprintf(stderr, "An error occurred while opening example_output.bw for writingn\n");
         return 1;
