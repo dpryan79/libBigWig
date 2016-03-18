@@ -46,6 +46,9 @@ libBigWig.so: $(OBJS:.o=.pico)
 test/testLocal: libBigWig.a
 	$(CC) -o $@ -I. $(CFLAGS) test/testLocal.c libBigWig.a $(LIBS)
 
+test/testRemoteManyContigs: libBigWig.a
+	$(CC) -o $@ -I. $(CFLAGS) test/testRemoteManyContigs.c libBigWig.a $(LIBS)
+
 test/testRemote: libBigWig.a
 	$(CC) -o $@ -I. $(CFLAGS) test/testRemote.c libBigWig.a $(LIBS)
 
@@ -55,11 +58,11 @@ test/testWrite: libBigWig.a
 test/exampleWrite: libBigWig.so
 	$(CC) -o $@ -I. -L. $(CFLAGS) test/exampleWrite.c -lBigWig $(LIBS) -Wl,-rpath .
 
-test: test/testLocal test/testRemote test/testWrite test/testLocal test/exampleWrite
+test: test/testLocal test/testRemote test/testWrite test/testLocal test/exampleWrite test/testRemoteManyContigs
 	./test/test.py
 
 clean:
-	rm -f *.o libBigWig.a libBigWig.so *.pico test/testLocal test/testRemote test/testWrite test/exampleWrite example_output.bw
+	rm -f *.o libBigWig.a libBigWig.so *.pico test/testLocal test/testRemote test/testWrite test/exampleWrite test/testRemoteManyContigs example_output.bw
 
 install: libBigWig.a libBigWig.so
 	install -d $(prefix)/lib $(prefix)/include

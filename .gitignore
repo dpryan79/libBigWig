@@ -9,3 +9,4 @@ test/testWrite
 test/output.bw
 test/example_output.bw
 test/exampleWrite
+test/testRemoteManyContigs
