@@ -138,7 +138,7 @@ Below is an example of how to write bigWig files. You can also find this file un
 
 #A note on statistics
 
-The results of `min`, `max`, and `mean` should be the same as those from `BigWigSummary`. `std` and `coverage`, however, may differ due to Kent's tools producing incorrect results (at least for `coverage`, though the same appears to be the case for `std`).
+The results of `min`, `max`, and `mean` should be the same as those from `BigWigSummary`. `stdev` and `coverage`, however, may differ due to Kent's tools producing incorrect results (at least for `coverage`, though the same appears to be the case for `stdev`).
 
 #Python interface
 
