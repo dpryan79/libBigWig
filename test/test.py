@@ -62,3 +62,12 @@ except:
     p2 = Popen(["md5"], stdin=p1.stdout, stdout=PIPE)
 md5sum = p2.communicate()[0].strip().split()[0]
 assert(md5sum == "a15a3120c03ba44a81b025ebd411966c")
+
+# Try a bigBed file
+p1 = Popen(["./test/testBigBed", "https://www.encodeproject.org/files/ENCFF001JBR/@@download/ENCFF001JBR.bigBed"], stdout=PIPE)
+try:
+    p2 = Popen(["md5sum"], stdin=p1.stdout, stdout=PIPE)
+except:
+    p2 = Popen(["md5"], stdin=p1.stdout, stdout=PIPE)
+md5sum = p2.communicate()[0].strip().split()[0]
+assert(md5sum == "8ce7daf61a8abbeb883803fb64ced767")

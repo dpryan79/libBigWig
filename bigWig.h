@@ -45,12 +45,16 @@ extern "C" {
 /*!
  * The library version number
  */
-#define LIBBIGWIG_VERSION 0.2.0
+#define LIBBIGWIG_VERSION 0.3.0
 
 /*!
  * The magic number of a bigWig file.
  */
 #define BIGWIG_MAGIC 0x888FFC26
+/*!
+ * The magic number of a bigBed file.
+ */
+#define BIGBED_MAGIC 0x8789F2EB
 /*!
  * The magic number of a "cirTree" block in a file.
  */
@@ -108,6 +112,8 @@ typedef struct {
     uint64_t ctOffset; /**<The offset to the on-disk chromosome tree list.*/
     uint64_t dataOffset; /**<The on-disk offset to the first block of data.*/
     uint64_t indexOffset; /**<The on-disk offset to the data index.*/
+    uint16_t fieldCount; /**<Total number of fields.*/
+    uint16_t definedFieldCount; /**<Number of fixed-format BED fields.*/
     uint64_t sqlOffset; /**<The on-disk offset to an SQL string. This is unused.*/
     uint64_t summaryOffset; /**<If there's a summary, this is the offset to it on the disk.*/
     uint32_t bufSize; /**<The compression buffer size (if the data is compressed).*/
@@ -182,6 +188,7 @@ typedef struct {
     bwRTree_t *idx; /**<The index for the full dataset.*/
     bwWriteBuffer_t *writeBuffer; /**<The buffer used for writing.*/
     int isWrite; /**<0: Opened for reading, 1: Opened for writing.*/
+    int type; /**<0: bigWig, 1: bigBed.*/
 } bigWigFile_t;
 
 /*!
@@ -194,6 +201,17 @@ typedef struct {
     uint32_t *end; /**<The end positions (0-based half open)*/
     float *value; /**<The value associated with each position*/
 } bwOverlappingIntervals_t;
+
+/*!
+ * @brief Holds interval:str associations
+ */
+typedef struct {
+    uint32_t l; /**<Number of intervals held*/
+    uint32_t m; /**<Maximum number of values/intervals the struct can hold*/
+    uint32_t *start; /**<The start positions (0-based half open)*/
+    uint32_t *end; /**<The end positions (0-based half open)*/
+    char **str; /**<The strings associated with a given entry.*/
+} bbOverlappingEntries_t;
 
 /*!
  * @brief Initializes curl and global variables. This *MUST* be called before other functions (at least if you want to connect to remote files).
@@ -211,6 +229,16 @@ int bwInit(size_t bufSize);
 void bwCleanup(void);
 
 /*!
+ * @brief Determine if a file is a bigWig file.
+ * This function will quickly check either local or remote files to determine if they appear to be valid bigWig files. This can be determined by reading the first 4 bytes of the file.
+ * @param fname The file name or URL (http, https, and ftp are supported)
+ * @param callBack An optional user-supplied function. This is applied to remote connections so users can specify things like proxy and password information. See `test/testRemote` for an example.
+ * @return 1 if the file appears to be bigWig, otherwise 0.
+ */
+int bwIsBigWig(char *fname, CURLcode (*callBack)(CURL*));
+int bbIsBigBed(char *fname, CURLcode (*callBack)(CURL*));
+
+/*!
  * @brief Opens a local or remote bigWig file.
  * This will open a local or remote bigWig file.
  * @param fname The file name or URL (http, https, and ftp are supported)
@@ -219,6 +247,17 @@ void bwCleanup(void);
  * @return A bigWigFile_t * on success and NULL on error.
  */
 bigWigFile_t *bwOpen(char *fname, CURLcode (*callBack)(CURL*), const char* mode);
+bigWigFile_t *bbOpen(char *fname, CURLcode (*callBack)(CURL*));
+
+/*!
+ * @brief Returns a string containing the SQL entry (or NULL).
+ * The "auto SQL" field contains the names and value types of the entries in
+ * each bigBed entry. If you need to parse a particular value out of each entry,
+ * then you'll need to first parse this.
+ * @param fp The file pointer to a valid bigWigFile_t
+ * @return A char *, which you MUST free!
+ */
+char *bbGetSQL(bigWigFile_t *fp);
 
 /*!
  * @brief Closes a bigWigFile_t and frees up allocated memory
@@ -247,6 +286,7 @@ uint32_t bwGetTid(bigWigFile_t *fp, char *chrom);
  * @see bwGetOverlappingIntervals
  */
 void bwDestroyOverlappingIntervals(bwOverlappingIntervals_t *o);
+void bbDestroyOverlappingEntries(bbOverlappingEntries_t *o);
 
 /*!
  * @brief Return entries overlapping an interval.
@@ -261,6 +301,7 @@ void bwDestroyOverlappingIntervals(bwOverlappingIntervals_t *o);
  * @see bwGetValues
  */
 bwOverlappingIntervals_t *bwGetOverlappingIntervals(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end);
+bbOverlappingEntries_t *bbGetOverlappingEntries(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end);
 
 /*!
  * @brief Return all per-base values in a given interval.

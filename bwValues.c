@@ -325,6 +325,18 @@ void bwDestroyOverlappingIntervals(bwOverlappingIntervals_t *o) {
     free(o);
 }
 
+void bbDestroyOverlappingEntries(bbOverlappingEntries_t *o) {
+    uint32_t i;
+    if(!o) return;
+    if(o->start) free(o->start);
+    if(o->end) free(o->end);
+    for(i=0; i<o->l; i++) {
+        if(o->str[i]) free(o->str[i]);
+    }
+    if(o->str) free(o->str);
+    free(o);
+}
+
 //Returns NULL on error, in which case o has been free()d
 static bwOverlappingIntervals_t *pushIntervals(bwOverlappingIntervals_t *o, uint32_t start, uint32_t end, float value) {
     if(o->l+1 >= o->m) {
@@ -343,6 +355,27 @@ static bwOverlappingIntervals_t *pushIntervals(bwOverlappingIntervals_t *o, uint
 
 error:
     bwDestroyOverlappingIntervals(o);
+    return NULL;
+}
+
+static bbOverlappingEntries_t *pushBBIntervals(bbOverlappingEntries_t *o, uint32_t start, uint32_t end, char *str) {
+    if(o->l+1 >= o->m) {
+        o->m = roundup(o->l+1);
+        o->start = realloc(o->start, o->m * sizeof(uint32_t));
+        if(!o->start) goto error;
+        o->end = realloc(o->end, o->m * sizeof(uint32_t));
+        if(!o->end) goto error;
+        o->str = realloc(o->str, o->m * sizeof(char**));
+        if(!o->str) goto error;
+    }
+    o->start[o->l] = start;
+    o->end[o->l] = end;
+    o->str[o->l] = strdup(str);
+    o->l++;
+    return o;
+
+error:
+    bbDestroyOverlappingEntries(o);
     return NULL;
 }
 
@@ -443,6 +476,80 @@ error:
     return NULL;
 }
 
+bbOverlappingEntries_t *bbGetOverlappingEntriesCore(bigWigFile_t *fp, bwOverlapBlock_t *o, uint32_t tid, uint32_t ostart, uint32_t oend) {
+    uint64_t i;
+    int compressed = 0, rv, slen;
+    uLongf sz = fp->hdr->bufSize, tmp;
+    void *buf = NULL, *bufEnd = NULL, *compBuf = NULL;
+    uint32_t entryTid = 0, start = 0, end;
+    char *str;
+    bbOverlappingEntries_t *output = calloc(1, sizeof(bbOverlappingEntries_t));
+
+    if(!output) goto error;
+
+    if(!o) return output;
+    if(!o->n) return output;
+
+    if(sz) {
+        compressed = 1;
+        buf = malloc(sz);
+    }
+    sz = 0; //This is now the size of the compressed buffer
+
+    for(i=0; i<o->n; i++) {
+        if(bwSetPos(fp, o->offset[i])) goto error;
+
+        if(sz < o->size[i]) {
+            compBuf = realloc(compBuf, o->size[i]);
+            sz = o->size[i];
+        }
+        if(!compBuf) goto error;
+
+        if(bwRead(compBuf, o->size[i], 1, fp) != 1) goto error;
+        if(compressed) {
+            tmp = fp->hdr->bufSize; //This gets over-written by uncompress
+            rv = uncompress(buf, (uLongf *) &tmp, compBuf, o->size[i]);
+            if(rv != Z_OK) goto error;
+        } else {
+            buf = compBuf;
+            tmp = o->size[i]; //TODO: Is this correct? Do non-gzipped bigBeds exist?
+        }
+
+        bufEnd = buf + tmp;
+        while(buf < bufEnd) {
+            entryTid = ((uint32_t*)buf)[0];
+            start = ((uint32_t*)buf)[1];
+            end = ((uint32_t*)buf)[2];
+            buf += 12;
+            str = (char*)buf;
+            slen = strlen(str) + 1;
+            buf += slen;
+
+            if(entryTid < tid) continue;
+            if(entryTid > tid) break;
+            if(end <= ostart) continue;
+            if(start >= oend) break;
+
+            //Push the overlap
+            if(!pushBBIntervals(output, start, end, str)) goto error;
+        }
+
+        buf = bufEnd - tmp; //reset the buffer pointer
+    }
+
+    if(compressed && buf) free(buf);
+    if(compBuf) free(compBuf);
+    return output;
+
+error:
+    fprintf(stderr, "[bbGetOverlappingEntriesCore] Got an error\n");
+    buf = bufEnd - tmp;
+    if(output) bbDestroyOverlappingEntries(output);
+    if(compressed && buf) free(buf);
+    if(compBuf) free(compBuf);
+    return NULL;
+}
+
 //Returns NULL on error OR no intervals, which is a bad design...
 bwOverlappingIntervals_t *bwGetOverlappingIntervals(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end) {
     bwOverlappingIntervals_t *output;
@@ -451,6 +558,18 @@ bwOverlappingIntervals_t *bwGetOverlappingIntervals(bigWigFile_t *fp, char *chro
     bwOverlapBlock_t *blocks = bwGetOverlappingBlocks(fp, chrom, start, end);
     if(!blocks) return NULL;
     output = bwGetOverlappingIntervalsCore(fp, blocks, tid, start, end);
+    destroyBWOverlapBlock(blocks);
+    return output;
+}
+
+//Like above, but for bigBed files
+bbOverlappingEntries_t *bbGetOverlappingEntries(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end) {
+    bbOverlappingEntries_t *output;
+    uint32_t tid = bwGetTid(fp, chrom);
+    if(tid == (uint32_t) -1) return NULL;
+    bwOverlapBlock_t *blocks = bwGetOverlappingBlocks(fp, chrom, start, end);
+    if(!blocks) return NULL;
+    output = bbGetOverlappingEntriesCore(fp, blocks, tid, start, end);
     destroyBWOverlapBlock(blocks);
     return output;
 }
