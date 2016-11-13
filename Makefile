@@ -61,7 +61,7 @@ test/exampleWrite: libBigWig.so
 test/testBigBed: libBigWig.a
 	$(CC) -o $@ -I. $(CFLAGS) test/testBigBed.c libBigWig.a $(LIBS)
 
-test: test/testLocal test/testRemote test/testWrite test/testLocal test/exampleWrite test/testRemoteManyContigs test/testBigBed.c
+test: test/testLocal test/testRemote test/testWrite test/testLocal test/exampleWrite test/testRemoteManyContigs test/testBigBed
 	./test/test.py
 
 clean:

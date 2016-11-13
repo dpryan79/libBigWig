@@ -479,7 +479,7 @@ error:
 bbOverlappingEntries_t *bbGetOverlappingEntriesCore(bigWigFile_t *fp, bwOverlapBlock_t *o, uint32_t tid, uint32_t ostart, uint32_t oend) {
     uint64_t i;
     int compressed = 0, rv, slen;
-    uLongf sz = fp->hdr->bufSize, tmp;
+    uLongf sz = fp->hdr->bufSize, tmp = 0;
     void *buf = NULL, *bufEnd = NULL, *compBuf = NULL;
     uint32_t entryTid = 0, start = 0, end;
     char *str;
