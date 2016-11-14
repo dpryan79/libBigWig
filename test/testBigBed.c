@@ -92,6 +92,9 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    assert(bwIsBigWig(argv[1], NULL) == 0);
+    assert(bbIsBigBed(argv[1], NULL) == 1);
+
     fp = bbOpen(argv[1], NULL);
     if(!fp) {
         fprintf(stderr, "An error occured while opening %s\n", argv[1]);
@@ -108,10 +111,18 @@ int main(int argc, char *argv[]) {
     }
 
     //Presumably this is the sort of interface that's needed...
-    o = bbGetOverlappingEntries(fp, "chr1", 4450000, 4500000);
+    o = bbGetOverlappingEntries(fp, "chr1", 4450000, 4500000, 1);
     printf("%"PRIu32" entries overlap\n", o->l);
     for(i=0; i<o->l; i++) {
         printf("%"PRIu32"-%"PRIu32"\t %s\n", o->start[i], o->end[i], o->str[i]);
+    }
+    if(o) bbDestroyOverlappingEntries(o);
+
+    //Ensure that we can fetch entries with no strings
+    o = bbGetOverlappingEntries(fp, "chr1", 4450000, 4500000, 0);
+    printf("%"PRIu32" entries overlap\n", o->l);
+    for(i=0; i<o->l; i++) {
+        printf("%"PRIu32"-%"PRIu32"\n", o->start[i], o->end[i]);
     }
     if(o) bbDestroyOverlappingEntries(o);
 

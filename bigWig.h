@@ -236,6 +236,14 @@ void bwCleanup(void);
  * @return 1 if the file appears to be bigWig, otherwise 0.
  */
 int bwIsBigWig(char *fname, CURLcode (*callBack)(CURL*));
+
+/*!
+ * @brief Determine is a file is a bigBed file.
+ * This function will quickly check either local or remote files to determine if they appear to be valid bigWig files. This can be determined by reading the first 4 bytes of the file.
+ * @param fname The file name or URL (http, https, and ftp are supported)
+ * @param callBack An optional user-supplied function. This is applied to remote connections so users can specify things like proxy and password information. See `test/testRemote` for an example.
+ * @return 1 if the file appears to be bigWig, otherwise 0.
+ */
 int bbIsBigBed(char *fname, CURLcode (*callBack)(CURL*));
 
 /*!
@@ -247,6 +255,14 @@ int bbIsBigBed(char *fname, CURLcode (*callBack)(CURL*));
  * @return A bigWigFile_t * on success and NULL on error.
  */
 bigWigFile_t *bwOpen(char *fname, CURLcode (*callBack)(CURL*), const char* mode);
+
+/*!
+ * @brief Opens a local or remote bigBed file.
+ * This will open a local or remote bigBed file. Note that this file format can only be read and NOT written!
+ * @param fname The file name or URL (http, https, and ftp are supported)
+ * @param callBack An optional user-supplied function. This is applied to remote connections so users can specify things like proxy and password information. See `test/testRemote` for an example.
+ * @return A bigWigFile_t * on success and NULL on error.
+ */
 bigWigFile_t *bbOpen(char *fname, CURLcode (*callBack)(CURL*));
 
 /*!
@@ -286,12 +302,18 @@ uint32_t bwGetTid(bigWigFile_t *fp, char *chrom);
  * @see bwGetOverlappingIntervals
  */
 void bwDestroyOverlappingIntervals(bwOverlappingIntervals_t *o);
+
+/*!
+ * @brief Frees space allocated by `bbGetOverlappingEntries`
+ * @param o A valid `bbOverlappingEntries_t` pointer.
+ * @see bbGetOverlappingEntries
+ */
 void bbDestroyOverlappingEntries(bbOverlappingEntries_t *o);
 
 /*!
  * @brief Return entries overlapping an interval.
  * Find all entries overlapping a range and returns them, including their associated values.
- * @param fp A valid bigWigFile_t pointer.
+ * @param fp A valid bigWigFile_t pointer. This MUST be for a bigWig file!
  * @param chrom A valid chromosome name.
  * @param start The start position of the interval. This is 0-based half open, so 0 is the first base.
  * @param end The end position of the interval. Again, this is 0-based half open, so 100 will include the 100th base...which is at position 99.
@@ -301,7 +323,20 @@ void bbDestroyOverlappingEntries(bbOverlappingEntries_t *o);
  * @see bwGetValues
  */
 bwOverlappingIntervals_t *bwGetOverlappingIntervals(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end);
-bbOverlappingEntries_t *bbGetOverlappingEntries(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end);
+
+/*!
+ * @brief Return bigBed entries overlapping an interval.
+ * Find all entries overlapping a range and returns them.
+ * @param fp A valid bigWigFile_t pointer. This MUST be for a bigBed file!
+ * @param chrom A valid chromosome name.
+ * @param start The start position of the interval. This is 0-based half open, so 0 is the first base.
+ * @param end The end position of the interval. Again, this is 0-based half open, so 100 will include the 100th base...which is at position 99.
+ * @param withString If not 0, return the string associated with each entry in the output. If 0, there are no associated strings returned. This is useful if the only information needed are the locations of the entries, which require significantly less memory.
+ * @return NULL on error or no overlapping values, otherwise a `bbOverlappingEntries_t *` holding the intervals and (optionally) the associated string.
+ * @see bbOverlappingEntries_t
+ * @see bbDestroyOverlappingEntries
+ */
+bbOverlappingEntries_t *bbGetOverlappingEntries(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end, int withString);
 
 /*!
  * @brief Return all per-base values in a given interval.

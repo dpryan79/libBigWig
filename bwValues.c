@@ -330,10 +330,12 @@ void bbDestroyOverlappingEntries(bbOverlappingEntries_t *o) {
     if(!o) return;
     if(o->start) free(o->start);
     if(o->end) free(o->end);
-    for(i=0; i<o->l; i++) {
-        if(o->str[i]) free(o->str[i]);
+    if(o->str) {
+        for(i=0; i<o->l; i++) {
+            if(o->str[i]) free(o->str[i]);
+        }
+        free(o->str);
     }
-    if(o->str) free(o->str);
     free(o);
 }
 
@@ -358,19 +360,21 @@ error:
     return NULL;
 }
 
-static bbOverlappingEntries_t *pushBBIntervals(bbOverlappingEntries_t *o, uint32_t start, uint32_t end, char *str) {
+static bbOverlappingEntries_t *pushBBIntervals(bbOverlappingEntries_t *o, uint32_t start, uint32_t end, char *str, int withString) {
     if(o->l+1 >= o->m) {
         o->m = roundup(o->l+1);
         o->start = realloc(o->start, o->m * sizeof(uint32_t));
         if(!o->start) goto error;
         o->end = realloc(o->end, o->m * sizeof(uint32_t));
         if(!o->end) goto error;
-        o->str = realloc(o->str, o->m * sizeof(char**));
-        if(!o->str) goto error;
+        if(withString) {
+            o->str = realloc(o->str, o->m * sizeof(char**));
+            if(!o->str) goto error;
+        }
     }
     o->start[o->l] = start;
     o->end[o->l] = end;
-    o->str[o->l] = strdup(str);
+    if(withString) o->str[o->l] = strdup(str);
     o->l++;
     return o;
 
@@ -476,7 +480,7 @@ error:
     return NULL;
 }
 
-bbOverlappingEntries_t *bbGetOverlappingEntriesCore(bigWigFile_t *fp, bwOverlapBlock_t *o, uint32_t tid, uint32_t ostart, uint32_t oend) {
+bbOverlappingEntries_t *bbGetOverlappingEntriesCore(bigWigFile_t *fp, bwOverlapBlock_t *o, uint32_t tid, uint32_t ostart, uint32_t oend, int withString) {
     uint64_t i;
     int compressed = 0, rv, slen;
     uLongf sz = fp->hdr->bufSize, tmp = 0;
@@ -531,7 +535,7 @@ bbOverlappingEntries_t *bbGetOverlappingEntriesCore(bigWigFile_t *fp, bwOverlapB
             if(start >= oend) break;
 
             //Push the overlap
-            if(!pushBBIntervals(output, start, end, str)) goto error;
+            if(!pushBBIntervals(output, start, end, str, withString)) goto error;
         }
 
         buf = bufEnd - tmp; //reset the buffer pointer
@@ -563,13 +567,13 @@ bwOverlappingIntervals_t *bwGetOverlappingIntervals(bigWigFile_t *fp, char *chro
 }
 
 //Like above, but for bigBed files
-bbOverlappingEntries_t *bbGetOverlappingEntries(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end) {
+bbOverlappingEntries_t *bbGetOverlappingEntries(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end, int withString) {
     bbOverlappingEntries_t *output;
     uint32_t tid = bwGetTid(fp, chrom);
     if(tid == (uint32_t) -1) return NULL;
     bwOverlapBlock_t *blocks = bwGetOverlappingBlocks(fp, chrom, start, end);
     if(!blocks) return NULL;
-    output = bbGetOverlappingEntriesCore(fp, blocks, tid, start, end);
+    output = bbGetOverlappingEntriesCore(fp, blocks, tid, start, end, withString);
     destroyBWOverlapBlock(blocks);
     return output;
 }
