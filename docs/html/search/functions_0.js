@@ -1,5 +1,10 @@
 var searchData=
 [
+  ['bbdestroyoverlappingentries',['bbDestroyOverlappingEntries',['../bigWig_8h.html#a1c53fa1c835b2527afb5028d21111ff4',1,'bwValues.c']]],
+  ['bbgetoverlappingentries',['bbGetOverlappingEntries',['../bigWig_8h.html#a3ae987bbf528cc193bbbbd7536668e89',1,'bwValues.c']]],
+  ['bbgetsql',['bbGetSQL',['../bigWig_8h.html#a6de19dc3a3e25e1b10a61b941f299862',1,'bwRead.c']]],
+  ['bbisbigbed',['bbIsBigBed',['../bigWig_8h.html#a592fb218273e1f18d97448c88588df19',1,'bwRead.c']]],
+  ['bbopen',['bbOpen',['../bigWig_8h.html#aa1f2b92d87ce0edc52d75ce8351e03a5',1,'bwRead.c']]],
   ['bwaddintervals',['bwAddIntervals',['../bigWig_8h.html#a11d64f7e0f8c9b7d79fe826bb97c5b59',1,'bwWrite.c']]],
   ['bwaddintervalspans',['bwAddIntervalSpans',['../bigWig_8h.html#a633635a8da1bb1e9e5f42b5557f9872a',1,'bwWrite.c']]],
   ['bwaddintervalspansteps',['bwAddIntervalSpanSteps',['../bigWig_8h.html#aec467bb957caab80a06c21ff5b4bbfab',1,'bwWrite.c']]],
@@ -18,11 +23,13 @@ var searchData=
   ['bwgettid',['bwGetTid',['../bigWig_8h.html#af017214ff795d4d738cf679cd4a55b6c',1,'bwValues.c']]],
   ['bwgetvalues',['bwGetValues',['../bigWig_8h.html#a29f3a6b4b6861833a35a1199666d2cf9',1,'bwValues.c']]],
   ['bwinit',['bwInit',['../bigWig_8h.html#a4aa7fa5e6146a2719feb8815c9bccd62',1,'bwRead.c']]],
+  ['bwisbigwig',['bwIsBigWig',['../bigWig_8h.html#a83cb23e15fed718ba77576e41865dab9',1,'bwRead.c']]],
   ['bwopen',['bwOpen',['../bigWig_8h.html#a55e46bf04f13da31a3971044b85c9243',1,'bwRead.c']]],
   ['bwread',['bwRead',['../bwCommon_8h.html#adc16c73076856035477e460ea4ea3d17',1,'bwRead.c']]],
   ['bwreadindex',['bwReadIndex',['../bwCommon_8h.html#a1efdd9f510597b0a6ab449f33d4d0966',1,'bwValues.c']]],
   ['bwsetpos',['bwSetPos',['../bwCommon_8h.html#a7dff7d19c1f094d5ff6a88553badffe0',1,'bwRead.c']]],
   ['bwstats',['bwStats',['../bigWig_8h.html#af06eae8c9d405a03276c56d53e3c4fc4',1,'bwStats.c']]],
+  ['bwstatsfromfull',['bwStatsFromFull',['../bigWig_8h.html#a18f6f370b879f855fee47f9d452ebf4b',1,'bwStats.c']]],
   ['bwtell',['bwTell',['../bwCommon_8h.html#ab55fdfee13cf1d6f16440d8c6bc7a4fe',1,'bwRead.c']]],
   ['bwwritehdr',['bwWriteHdr',['../bigWig_8h.html#af66b538195826aa3bda7e3363cf3f201',1,'bwWrite.c']]]
 ];

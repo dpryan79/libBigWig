@@ -104,6 +104,9 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    assert(bwIsBigWig(argv[1], NULL) == 1);
+    assert(bbIsBigBed(argv[1], NULL) == 0);
+
     fp = bwOpen(argv[1], NULL, "r");
     if(!fp) {
         fprintf(stderr, "An error occured while opening %s\n", argv[1]);
