@@ -1,5 +1,6 @@
 var searchData=
 [
+  ['bboverlappingentries_5ft',['bbOverlappingEntries_t',['../structbbOverlappingEntries__t.html',1,'']]],
   ['bigwigfile_5ft',['bigWigFile_t',['../structbigWigFile__t.html',1,'']]],
   ['bigwighdr_5ft',['bigWigHdr_t',['../structbigWigHdr__t.html',1,'']]],
   ['bwdataheader_5ft',['bwDataHeader_t',['../structbwDataHeader__t.html',1,'']]],
