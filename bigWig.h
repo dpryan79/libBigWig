@@ -218,6 +218,24 @@ typedef struct {
 } bbOverlappingEntries_t;
 
 /*!
+ * @brief A structure to hold iterations
+ * One of intervals and entries should be used to access records from bigWig or bigBed files, respectively.
+ */
+typedef struct {
+    bigWigFile_t *bw; /**<Pointer to the bigWig/bigBed file.*/
+    uint32_t tid; /**<The contig/chromosome ID.*/
+    uint32_t start; /**<Start position of the query interval.*/
+    uint32_t end; /**<End position of the query interval.*/
+    uint64_t offset; /**<Offset into the blocks.*/
+    uint32_t blocksPerIteration; /**<Number of blocks to use per iteration.*/
+    int withString; /**<For bigBed entries, whether to return the string with the entries.*/
+    void *blocks; /**<Overlapping blocks.*/
+    bwOverlappingIntervals_t *intervals; /**<Overlapping intervals (or NULL).*/
+    bbOverlappingEntries_t *entries; /**<Overlapping entries (or NULL).*/
+    void *data; /**<Points to either intervals or entries. If there are no further intervals/entries, then this is NULL. Use this to test for whether to continue iterating.*/
+} bwOverlapIterator_t;
+
+/*!
  * @brief Initializes curl and global variables. This *MUST* be called before other functions (at least if you want to connect to remote files).
  * For remote file, curl must be initialized and regions of a file read into an internal buffer. If the buffer is too small then an excessive number of connections will be made. If the buffer is too large than more data than required is fetched. 128KiB is likely sufficient for most needs.
  * @param bufSize The internal buffer size used for remote connection.
@@ -342,6 +360,11 @@ bwOverlappingIntervals_t *bwGetOverlappingIntervals(bigWigFile_t *fp, char *chro
  * @see bbDestroyOverlappingEntries
  */
 bbOverlappingEntries_t *bbGetOverlappingEntries(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end, int withString);
+
+bwOverlapIterator_t *bwOverlappingIntervalsIterator(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end, uint32_t blocksPerIteration);
+bwOverlapIterator_t *bbOverlappingEntriesIterator(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end, int withString, uint32_t blocksPerIteration);
+bwOverlapIterator_t *bwInteratorNext(bwOverlapIterator_t *iter);
+void bwInteratorDestroy(bwOverlapIterator_t *iter);
 
 /*!
  * @brief Return all per-base bigWig values in a given interval.

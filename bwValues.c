@@ -578,6 +578,128 @@ bbOverlappingEntries_t *bbGetOverlappingEntries(bigWigFile_t *fp, char *chrom, u
     return output;
 }
 
+//Returns NULL on error
+bwOverlapIterator_t *bwOverlappingIntervalsIterator(bigWigFile_t *bw, char *chrom, uint32_t start, uint32_t end, uint32_t blocksPerIteration) {
+    bwOverlapIterator_t *output = NULL;
+    uint64_t n;
+    uint32_t tid = bwGetTid(bw, chrom);
+    if(tid == (uint32_t) -1) return output;
+    output = calloc(1, sizeof(bwOverlapIterator_t));
+    if(!output) return output;
+    bwOverlapBlock_t *blocks = bwGetOverlappingBlocks(bw, chrom, start, end);
+
+    output->bw = bw;
+    output->tid = tid;
+    output->start = start;
+    output->end = end;
+    output->blocks = blocks;
+    output->blocksPerIteration = blocksPerIteration;
+
+    if(blocks) {
+        n = blocks->n;
+        if(n>blocksPerIteration) blocks->n = blocksPerIteration;
+        output->intervals = bwGetOverlappingIntervalsCore(bw, blocks,tid, start, end);
+        blocks->n = n;
+        output->offset = n;
+    }
+    output->data = output->intervals;
+    return output;
+}
+
+//Returns NULL on error
+bwOverlapIterator_t *bbOverlappingEntriesIterator(bigWigFile_t *bw, char *chrom, uint32_t start, uint32_t end, int withString, uint32_t blocksPerIteration) {
+    bwOverlapIterator_t *output = NULL;
+    uint64_t n;
+    uint32_t tid = bwGetTid(bw, chrom);
+    if(tid == (uint32_t) -1) return output;
+    output = calloc(1, sizeof(bwOverlapIterator_t));
+    if(!output) return output;
+    bwOverlapBlock_t *blocks = bwGetOverlappingBlocks(bw, chrom, start, end);
+
+    output->bw = bw;
+    output->tid = tid;
+    output->start = start;
+    output->end = end;
+    output->blocks = blocks;
+    output->blocksPerIteration = blocksPerIteration;
+    output->withString = withString;
+
+    if(blocks) {
+        n = blocks->n;
+        if(n>blocksPerIteration) blocks->n = blocksPerIteration;
+        output->entries = bbGetOverlappingEntriesCore(bw, blocks,tid, start, end, withString);
+        blocks->n = n;
+        output->offset = n;
+    }
+    output->data = output->entries;
+    return output;
+}
+
+void bwIteratorDestroy(bwOverlapIterator_t *iter) {
+    if(!iter) return;
+    if(iter->blocks) destroyBWOverlapBlock((bwOverlapBlock_t*) iter->blocks);
+    if(iter->intervals) bwDestroyOverlappingIntervals(iter->intervals);
+    if(iter->entries) bbDestroyOverlappingEntries(iter->entries);
+    free(iter);
+}
+
+//On error, points to NULL and destroys the input
+bwOverlapIterator_t *bwIteratorNext(bwOverlapIterator_t *iter) {
+    uint64_t n, *offset, *size;
+    bwOverlapBlock_t *blocks = iter->blocks;
+
+    if(iter->intervals) {
+        bwDestroyOverlappingIntervals(iter->intervals);
+        iter->intervals = NULL;
+    }
+    if(iter->entries) {
+        bbDestroyOverlappingEntries(iter->entries);
+        iter->entries = NULL;
+    }
+    iter->data = NULL;
+
+    if(iter->offset < blocks->n) {
+        //store the previous values
+        n = blocks->n;
+        offset = blocks->offset;
+        size = blocks->size;
+
+        blocks->offset += iter->offset;
+        blocks->size += iter->offset;
+        if(iter->offset + iter->blocksPerIteration > n) {
+            blocks->n = iter->blocksPerIteration;
+        } else {
+            blocks->n = blocks->n - iter->offset;
+        }
+
+        //Get the intervals or entries, as appropriate
+        if(iter->bw->type == 0) {
+            //bigWig
+            iter->intervals = bwGetOverlappingIntervalsCore(iter->bw, blocks, iter->tid, iter->start, iter->end);
+            iter->data = iter->intervals;
+        } else {
+            //bigBed
+            iter->entries = bbGetOverlappingEntriesCore(iter->bw, blocks, iter->tid, iter->start, iter->end, iter->withString);
+            iter->data = iter->intervals;
+        }
+        iter->offset += n;
+
+        //reset the values in iter->blocks
+        blocks->n = n;
+        blocks->offset = offset;
+        blocks->size = size;
+
+        //Check for error
+        if(!iter->intervals && !iter->entries) goto error;
+    }
+
+    return iter;
+
+error:
+    bwIteratorDestroy(iter);
+    return NULL;
+}
+
 //This is like bwGetOverlappingIntervals, except it returns 1 base windows. If includeNA is not 0, then a value will be returned for every position in the range (defaulting to NAN).
 //The ->end member is NULL
 //If includeNA is not 0 then ->start is also NULL, since it's implied
