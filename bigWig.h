@@ -363,8 +363,8 @@ bbOverlappingEntries_t *bbGetOverlappingEntries(bigWigFile_t *fp, char *chrom, u
 
 bwOverlapIterator_t *bwOverlappingIntervalsIterator(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end, uint32_t blocksPerIteration);
 bwOverlapIterator_t *bbOverlappingEntriesIterator(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end, int withString, uint32_t blocksPerIteration);
-bwOverlapIterator_t *bwInteratorNext(bwOverlapIterator_t *iter);
-void bwInteratorDestroy(bwOverlapIterator_t *iter);
+bwOverlapIterator_t *bwIteratorNext(bwOverlapIterator_t *iter);
+void bwIteratorDestroy(bwOverlapIterator_t *iter);
 
 /*!
  * @brief Return all per-base bigWig values in a given interval.

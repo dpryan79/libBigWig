@@ -600,7 +600,7 @@ bwOverlapIterator_t *bwOverlappingIntervalsIterator(bigWigFile_t *bw, char *chro
         if(n>blocksPerIteration) blocks->n = blocksPerIteration;
         output->intervals = bwGetOverlappingIntervalsCore(bw, blocks,tid, start, end);
         blocks->n = n;
-        output->offset = n;
+        output->offset = blocksPerIteration;
     }
     output->data = output->intervals;
     return output;
@@ -629,7 +629,7 @@ bwOverlapIterator_t *bbOverlappingEntriesIterator(bigWigFile_t *bw, char *chrom,
         if(n>blocksPerIteration) blocks->n = blocksPerIteration;
         output->entries = bbGetOverlappingEntriesCore(bw, blocks,tid, start, end, withString);
         blocks->n = n;
-        output->offset = n;
+        output->offset = blocksPerIteration;
     }
     output->data = output->entries;
     return output;
@@ -664,12 +664,13 @@ bwOverlapIterator_t *bwIteratorNext(bwOverlapIterator_t *iter) {
         offset = blocks->offset;
         size = blocks->size;
 
+        //Move the start of the blocks
         blocks->offset += iter->offset;
         blocks->size += iter->offset;
         if(iter->offset + iter->blocksPerIteration > n) {
-            blocks->n = iter->blocksPerIteration;
-        } else {
             blocks->n = blocks->n - iter->offset;
+        } else {
+            blocks->n = iter->blocksPerIteration;
         }
 
         //Get the intervals or entries, as appropriate
@@ -680,9 +681,9 @@ bwOverlapIterator_t *bwIteratorNext(bwOverlapIterator_t *iter) {
         } else {
             //bigBed
             iter->entries = bbGetOverlappingEntriesCore(iter->bw, blocks, iter->tid, iter->start, iter->end, iter->withString);
-            iter->data = iter->intervals;
+            iter->data = iter->entries;
         }
-        iter->offset += n;
+        iter->offset += iter->blocksPerIteration;
 
         //reset the values in iter->blocks
         blocks->n = n;
