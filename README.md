@@ -196,6 +196,37 @@ Entries will then be of the form (one per line):
 
 Note that chromosome and start/end intervals are stored separately, so there's no need to parse them out of string. libBigWig can return these entries, either with or without the above associated strings. Parsing these string is left to the application requiring them and is currently outside the scope of this library.
 
+# Interval/Entry iterators
+
+Sometimes it is desirable to request a large number of intervals from a bigWig file or entries from a bigBed file, but not hold them all in memory at once (e.g., due to saving memory). To support this, libBigWig (since version 0.3.0) supports two kinds of iterators. The general process of using iterators is: (1) iterator creation, (2) traversal, and finally (3) iterator destruction. Only iterator creation differs between bigWig and bigBed files.
+
+Importantly, iterators return results by one or more blocks. This is for convenience, since bigWig intervals and bigBed entries are stored in together in fixed-size groups, called blocks. The number of blocks of entries returned, therefore, is an option that can be specified to balance performance and memory usage.
+
+## Iterator creation
+
+For bigwig files, iterators are created with the `bwOverlappingIntervalsIterator()`. This function takes chromosomal bounds (chromosome name, start, and end position) as well as a number of blocks. The equivalent function for bigBed files is `bbOverlappingEntriesIterator()`, which additionally takes a `withString` argutment, which dictates whether the returned entries include the associated string values or not.
+
+Each of the aforementioned files returns a pointer to a `bwOverlapIterator_t` object. The only important parts of this structure for end users are the following members: `entries`, `intervals`, and `data`. `entries` is a pointer to a `bbOverlappingEntries_t` object, or `NULL` if a bigWig file is being used. Likewise, `intervals` is a pointer to a `bwOverlappingIntervals_t` object, or `NULL` if a bigBed file is being used. `data` is a special pointer, used to signify the end of iteration. Thus, when `data` is a `NULL` pointer, iteration has ended.
+
+## Iterator traversal
+
+Regardless of whether a bigWig or bigBed file is being used, the `bwIteratorNext()` function will free currently used memory and load the appropriate intervals or entries for the next block(s). On error, this will return a NULL pointer (memory is already internally freed in this case).
+
+## Iterator destruction
+
+`bwOverlapIterator_t` objects MUST be destroyed after use. This can be done with the `bwIteratorDestroy()` function.
+
+## Example
+
+A full example is provided in `tests/testIterator.c`, but a small example of iterating over all bigWig intervals in `chr1:0-10000000` in chunks of 5 blocks follows:
+
+    iter = bwOverlappingIntervalsIterator(fp, "chr1", 0, 10000000, 5);
+    while(iter->data) {
+        //Do stuff with iter->intervals
+        iter = bwIteratorNext(iter);
+    }
+    bwIteratorDestroy(iter);
+
 # A note on bigWig statistics
 
 The results of `min`, `max`, and `mean` should be the same as those from `BigWigSummary`. `stdev` and `coverage`, however, may differ due to Kent's tools producing incorrect results (at least for `coverage`, though the same appears to be the case for `stdev`).

@@ -96,13 +96,16 @@ bigWig files</h1>
 <h1><a class="anchor" id="Testing"></a>
 file types</h1>
 <p>As of version 0.3.0, libBigWig supports reading bigBed files. If an application needs to support both bigBed and bigWig input, then the <code>bwIsBigWig</code> and <code>bbIsBigBed</code> functions can be used to determine the file type. These both use the "magic" number at the beginning of the file to determine the file type.</p>
+<h1><a class="anchor" id="Interval"></a>
+and entry iterators</h1>
+<p>As of version 0.3.0, libBigWig supports iterating over intervals in bigWig files and entries in bigBed files. The number of intervals/entries returned with each iteration can be controlled by setting the number of blocks processed in each iteration (intervals and entries are group inside of bigWig and bigBed files into blocks of entries). See <code>test/testIterator.c</code> for an example.</p>
 <h1><a class="anchor" id="Examples"></a>
 Examples</h1>
 <p>Please see <a class="el" href="md_README.html">README.md</a> and the files under <code>test/</code> for examples. </p>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Nov 16 2016 22:42:14 for libBigWig by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Nov 18 2016 22:54:37 for libBigWig by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.11
 </small></address>

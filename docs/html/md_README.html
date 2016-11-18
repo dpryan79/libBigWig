@@ -250,14 +250,31 @@ bbDestroyOverlappingEntries | Free memory allocated by the above command
 59436   186 -   0.054   0.15    1010
 59437   506 -   1.560   0.00    430611
 </pre><p>Note that chromosome and start/end intervals are stored separately, so there's no need to parse them out of string. libBigWig can return these entries, either with or without the above associated strings. Parsing these string is left to the application requiring them and is currently outside the scope of this library.</p>
-<h1>A note on bigWig statistics</h1>
+<h1>Interval/Entry iterators</h1>
+<p>Sometimes it is desirable to request a large number of intervals from a bigWig file or entries from a bigBed file, but not hold them all in memory at once (e.g., due to saving memory). To support this, libBigWig (since version 0.3.0) supports two kinds of iterators. The general process of using iterators is: (1) iterator creation, (2) traversal, and finally (3) iterator destruction. Only iterator creation differs between bigWig and bigBed files.</p>
+<p>Importantly, iterators return results by one or more blocks. This is for convenience, since bigWig intervals and bigBed entries are stored in together in fixed-size groups, called blocks. The number of blocks of entries returned, therefore, is an option that can be specified to balance performance and memory usage.</p>
+<h2>Iterator creation</h2>
+<p>For bigwig files, iterators are created with the <code><a class="el" href="bigWig_8h.html#afaeb6115f7056b209eefa9363b409ef5" title="Creates an iterator over intervals in a bigWig file Iterators can be traversed with bwIteratorNext() ...">bwOverlappingIntervalsIterator()</a></code>. This function takes chromosomal bounds (chromosome name, start, and end position) as well as a number of blocks. The equivalent function for bigBed files is <code><a class="el" href="bigWig_8h.html#a75c2894f13ba9d6917117c63565e5c42" title="Creates an iterator over entries in a bigBed file Iterators can be traversed with bwIteratorNext() an...">bbOverlappingEntriesIterator()</a></code>, which additionally takes a <code>withString</code> argutment, which dictates whether the returned entries include the associated string values or not.</p>
+<p>Each of the aforementioned files returns a pointer to a <code><a class="el" href="structbwOverlapIterator__t.html" title="A structure to hold iterations One of intervals and entries should be used to access records from big...">bwOverlapIterator_t</a></code> object. The only important parts of this structure for end users are the following members: <code>entries</code>, <code>intervals</code>, and <code>data</code>. <code>entries</code> is a pointer to a <code><a class="el" href="structbbOverlappingEntries__t.html" title="Holds interval:str associations. ">bbOverlappingEntries_t</a></code> object, or <code>NULL</code> if a bigWig file is being used. Likewise, <code>intervals</code> is a pointer to a <code><a class="el" href="structbwOverlappingIntervals__t.html" title="Holds interval:value associations. ">bwOverlappingIntervals_t</a></code> object, or <code>NULL</code> if a bigBed file is being used. <code>data</code> is a special pointer, used to signify the end of iteration. Thus, when <code>data</code> is a <code>NULL</code> pointer, iteration has ended.</p>
+<h2>Iterator traversal</h2>
+<p>Regardless of whether a bigWig or bigBed file is being used, the <code><a class="el" href="bigWig_8h.html#a3f15a3f526c2d9ad2f721b791bcdf956" title="Traverses to the entries/intervals in the next group of blocks. ">bwIteratorNext()</a></code> function will free currently used memory and load the appropriate intervals or entries for the next block(s). On error, this will return a NULL pointer (memory is already internally freed in this case).</p>
+<h2>Iterator destruction</h2>
+<p><code><a class="el" href="structbwOverlapIterator__t.html" title="A structure to hold iterations One of intervals and entries should be used to access records from big...">bwOverlapIterator_t</a></code> objects MUST be destroyed after use. This can be done with the <code><a class="el" href="bigWig_8h.html#a9b99f0c33d052d278d2e25044ca706e4" title="Destroys a bwOverlapIterator_t. ">bwIteratorDestroy()</a></code> function.</p>
+<h2>Example</h2>
+<p>A full example is provided in <code>tests/testIterator.c</code>, but a small example of iterating over all bigWig intervals in <code>chr1:0-10000000</code> in chunks of 5 blocks follows: </p><pre class="fragment">iter = bwOverlappingIntervalsIterator(fp, "chr1", 0, 10000000, 5);
+while(iter-&gt;data) {
+    //Do stuff with iter-&gt;intervals
+    iter = bwIteratorNext(iter);
+}
+bwIteratorDestroy(iter);
+</pre><h1>A note on bigWig statistics</h1>
 <p>The results of <code>min</code>, <code>max</code>, and <code>mean</code> should be the same as those from <code>BigWigSummary</code>. <code>stdev</code> and <code>coverage</code>, however, may differ due to Kent's tools producing incorrect results (at least for <code>coverage</code>, though the same appears to be the case for <code>stdev</code>).</p>
 <h1>Python interface</h1>
 <p>There are currently two python interfaces that make use of libBigWig: <a href="https://github.com/dpryan79/pyBigWig">pyBigWig</a> by me and <a href="https://github.com/brentp/bw-python">bw-python</a> by Brent Pederson. Those interested are encouraged to give both a try! </p>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Nov 16 2016 22:42:14 for libBigWig by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Nov 18 2016 22:54:37 for libBigWig by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.11
 </small></address>
