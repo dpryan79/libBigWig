@@ -33,6 +33,10 @@ extern "C" {
  *
  * As of version 0.3.0, libBigWig supports reading bigBed files. If an application needs to support both bigBed and bigWig input, then the `bwIsBigWig` and `bbIsBigBed` functions can be used to determine the file type. These both use the "magic" number at the beginning of the file to determine the file type.
  *
+ * \section Interval and entry iterators
+ *
+ * As of version 0.3.0, libBigWig supports iterating over intervals in bigWig files and entries in bigBed files. The number of intervals/entries returned with each iteration can be controlled by setting the number of blocks processed in each iteration (intervals and entries are group inside of bigWig and bigBed files into blocks of entries). See `test/testIterator.c` for an example.
+ *
  * \section Examples
  * 
  * Please see [README.md](README.md) and the files under `test/` for examples.
@@ -218,6 +222,24 @@ typedef struct {
 } bbOverlappingEntries_t;
 
 /*!
+ * @brief A structure to hold iterations
+ * One of intervals and entries should be used to access records from bigWig or bigBed files, respectively.
+ */
+typedef struct {
+    bigWigFile_t *bw; /**<Pointer to the bigWig/bigBed file.*/
+    uint32_t tid; /**<The contig/chromosome ID.*/
+    uint32_t start; /**<Start position of the query interval.*/
+    uint32_t end; /**<End position of the query interval.*/
+    uint64_t offset; /**<Offset into the blocks.*/
+    uint32_t blocksPerIteration; /**<Number of blocks to use per iteration.*/
+    int withString; /**<For bigBed entries, whether to return the string with the entries.*/
+    void *blocks; /**<Overlapping blocks.*/
+    bwOverlappingIntervals_t *intervals; /**<Overlapping intervals (or NULL).*/
+    bbOverlappingEntries_t *entries; /**<Overlapping entries (or NULL).*/
+    void *data; /**<Points to either intervals or entries. If there are no further intervals/entries, then this is NULL. Use this to test for whether to continue iterating.*/
+} bwOverlapIterator_t;
+
+/*!
  * @brief Initializes curl and global variables. This *MUST* be called before other functions (at least if you want to connect to remote files).
  * For remote file, curl must be initialized and regions of a file read into an internal buffer. If the buffer is too small then an excessive number of connections will be made. If the buffer is too large than more data than required is fetched. 128KiB is likely sufficient for most needs.
  * @param bufSize The internal buffer size used for remote connection.
@@ -342,6 +364,55 @@ bwOverlappingIntervals_t *bwGetOverlappingIntervals(bigWigFile_t *fp, char *chro
  * @see bbDestroyOverlappingEntries
  */
 bbOverlappingEntries_t *bbGetOverlappingEntries(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end, int withString);
+
+/*!
+ * @brief Creates an iterator over intervals in a bigWig file
+ * Iterators can be traversed with `bwIteratorNext()` and destroyed with `bwIteratorDestroy()`.
+ * Intervals are in the `intervals` member and `data` can be used to determine when to end iteration.
+ * @param fp A valid bigWigFile_t pointer. This MUST be for a bigWig file!
+ * @param chrom A valid chromosome name.
+ * @param start The start position of the interval. This is 0-based half open, so 0 is the first base.
+ * @param end The end position of the interval. Again, this is 0-based half open, so 100 will include the 100th base...which is at position 99.
+ * @param blocksPerIteration The number of blocks (internal groupings of intervals in bigWig files) to return per iteration.
+ * @return NULL on error, otherwise a bwOverlapIterator_t pointer
+ * @see bwOverlapIterator_t
+ * @see bwIteratorNext
+ * @see bwIteratorDestroy
+ */ 
+bwOverlapIterator_t *bwOverlappingIntervalsIterator(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end, uint32_t blocksPerIteration);
+
+/*!
+ * @brief Creates an iterator over entries in a bigBed file
+ * Iterators can be traversed with `bwIteratorNext()` and destroyed with `bwIteratorDestroy()`.
+ * Entries are in the `entries` member and `data` can be used to determine when to end iteration.
+ * @param fp A valid bigWigFile_t pointer. This MUST be for a bigBed file!
+ * @param chrom A valid chromosome name.
+ * @param start The start position of the interval. This is 0-based half open, so 0 is the first base.
+ * @param end The end position of the interval. Again, this is 0-based half open, so 100 will include the 100th base...which is at position 99.
+ * @param withString Whether the returned entries should include their associated strings.
+ * @param blocksPerIteration The number of blocks (internal groupings of entries in bigBed files) to return per iteration.
+ * @return NULL on error, otherwise a bwOverlapIterator_t pointer
+ * @see bbGetOverlappingEntries
+ * @see bwOverlapIterator_t
+ * @see bwIteratorNext
+ * @see bwIteratorDestroy
+ */ 
+bwOverlapIterator_t *bbOverlappingEntriesIterator(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end, int withString, uint32_t blocksPerIteration);
+
+/*!
+ * @brief Traverses to the entries/intervals in the next group of blocks.
+ * @param iter A bwOverlapIterator_t pointer that is updated (or destroyed on error)
+ * @return NULL on error, otherwise a bwOverlapIterator_t pointer with the intervals or entries from the next set of blocks.
+ * @see bwOverlapIterator_t
+ * @see bwIteratorDestroy
+ */ 
+bwOverlapIterator_t *bwIteratorNext(bwOverlapIterator_t *iter);
+
+/*!
+ * @brief Destroys a bwOverlapIterator_t
+ * @param iter The bwOverlapIterator_t that should be destroyed
+ */
+void bwIteratorDestroy(bwOverlapIterator_t *iter);
 
 /*!
  * @brief Return all per-base bigWig values in a given interval.
