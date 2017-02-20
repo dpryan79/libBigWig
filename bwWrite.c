@@ -887,6 +887,10 @@ uint32_t updateInterval(bigWigFile_t *fp, bwZoomBuffer_t *buffer, double *sum, d
     uint32_t rv = 0, offset = 0;
     if(!buffer) return 0;
     if(buffer->l+32 >= buffer->m) return 0;
+
+    //Make sure that we don't overflow a uint32_t by adding some huge value to start
+    if(start + size < start) size = ((uint32_t) -1) - start;
+
     if(buffer->l) {
         offset = buffer->l/32;
     } else {
