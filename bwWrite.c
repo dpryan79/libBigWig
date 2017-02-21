@@ -780,7 +780,7 @@ int writeIndex(bigWigFile_t *fp) {
 //This may or may not produce the requested number of zoom levels
 int makeZoomLevels(bigWigFile_t *fp) {
     uint32_t meanBinSize, i;
-    uint32_t multiplier = 4, zoom = 10;
+    uint32_t multiplier = 4, zoom = 10, maxZoom = 0;
     uint16_t nLevels = 0;
 
     meanBinSize = ((double) fp->writeBuffer->runningWidthSum)/(fp->writeBuffer->nEntries);
@@ -801,7 +801,15 @@ int makeZoomLevels(bigWigFile_t *fp) {
     if(!fp->hdr->zoomHdrs->indexOffset) return 4;
     if(!fp->hdr->zoomHdrs->idx) return 5;
 
+    //There's no point in having a zoom level larger than the largest chromosome
+    //This will none the less allow at least one zoom level, which is generally needed for IGV et al.
+    for(i=0; i<fp->cl->nKeys; i++) {
+        if(fp->cl->len[i] > maxZoom) maxZoom = fp->cl->len[i];
+    }
+    if(zoom > maxZoom) zoom = maxZoom;
+
     for(i=0; i<fp->hdr->nLevels; i++) {
+        if(zoom > maxZoom) break; //prevent absurdly large zoom levels
         fp->hdr->zoomHdrs->level[i] = zoom;
         nLevels++;
         if(((uint32_t)-1)/multiplier < zoom) break;
