@@ -1,4 +1,6 @@
+#ifndef NOCURL
 #include <curl/curl.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,6 +10,7 @@
 
 size_t GLOBAL_DEFAULTBUFFERSIZE;
 
+#ifndef NOCURL
 uint64_t getContentLength(URL_t *URL) {
     double size;
     if(curl_easy_getinfo(URL->x.curl, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &size) != CURLE_OK) {
@@ -71,15 +74,20 @@ size_t url_fread(void *obuf, size_t obufSize, URL_t *URL) {
     }
     return obufSize;
 }
+#endif
 
 //Returns the number of bytes requested or a smaller number on error
 //Note that in the case of remote files, the actual amount read may be less than the return value!
 size_t urlRead(URL_t *URL, void *buf, size_t bufSize) {
+#ifndef NOCURL
     if(URL->type==0) {
         return fread(buf, bufSize, 1, URL->x.fp)*bufSize;
     } else {
         return url_fread(buf, bufSize, URL);
     }
+#else
+    return fread(buf, bufSize, 1, URL->x.fp)*bufSize;
+#endif
 }
 
 size_t bwFillBuffer(void *inBuf, size_t l, size_t nmemb, void *pURL) {
@@ -102,15 +110,18 @@ size_t bwFillBuffer(void *inBuf, size_t l, size_t nmemb, void *pURL) {
 //Seek to an arbitrary location, returning a CURLcode
 //Note that a local file returns CURLE_OK on success or CURLE_FAILED_INIT on any error;
 CURLcode urlSeek(URL_t *URL, size_t pos) {
+#ifndef NOCURL
     char range[1024];
     CURLcode rv;
 
     if(URL->type == BWG_FILE) {
+#endif
         if(fseek(URL->x.fp, pos, SEEK_SET) == 0) {
             return CURLE_OK;
         } else {
             return CURLE_FAILED_INIT; //This is arbitrary
         }
+#ifndef NOCURL
     } else {
         //If the location is covered by the buffer then don't seek!
         if(pos < URL->filePos || pos >= URL->filePos+URL->bufSize) {
@@ -134,23 +145,30 @@ CURLcode urlSeek(URL_t *URL, size_t pos) {
             return CURLE_OK;
         }
     }
+#endif
 }
 
 URL_t *urlOpen(char *fname, CURLcode (*callBack)(CURL*), const char *mode) {
     URL_t *URL = calloc(1, sizeof(URL_t));
     if(!URL) return NULL;
     char *url = NULL, *req = NULL;
+#ifndef NOCURL
     CURLcode code;
     char range[1024];
+#endif
 
     URL->fname = fname;
 
     if((!mode) || (strchr(mode, 'w') == 0)) {
         //Set the protocol
+#ifndef NOCURL
         if(strncmp(fname, "http://", 7) == 0) URL->type = BWG_HTTP;
         else if(strncmp(fname, "https://", 8) == 0) URL->type = BWG_HTTPS;
         else if(strncmp(fname, "ftp://", 6) == 0) URL->type = BWG_FTP;
         else URL->type = BWG_FILE;
+#else
+        URL->type = BWG_FILE;
+#endif
 
         //local file?
         if(URL->type == BWG_FILE) {
@@ -161,6 +179,7 @@ URL_t *urlOpen(char *fname, CURLcode (*callBack)(CURL*), const char *mode) {
                 fprintf(stderr, "[urlOpen] Couldn't open %s for reading\n", fname);
                 return NULL;
             }
+#ifndef NOCURL
         } else {
             //Remote file, set up the memory buffer and get CURL ready
             URL->memBuf = malloc(GLOBAL_DEFAULTBUFFERSIZE);
@@ -212,6 +231,7 @@ URL_t *urlOpen(char *fname, CURLcode (*callBack)(CURL*), const char *mode) {
                 fprintf(stderr, "[urlOpen] curl_easy_perform received an error: %s\n", curl_easy_strerror(code));
                 goto error;
             }
+#endif
         }
     } else {
         URL->type = BWG_FILE;
@@ -226,6 +246,7 @@ URL_t *urlOpen(char *fname, CURLcode (*callBack)(CURL*), const char *mode) {
     if(req) free(req);
     return URL;
 
+#ifndef NOCURL
 error:
     if(url) free(url);
     if(req) free(req);
@@ -233,15 +254,18 @@ error:
     curl_easy_cleanup(URL->x.curl);
     free(URL);
     return NULL;
+#endif
 }
 
 //Performs the necessary free() operations and handles cleaning up curl
 void urlClose(URL_t *URL) {
     if(URL->type == BWG_FILE) {
         fclose(URL->x.fp);
+#ifndef NOCURL
     } else {
         free(URL->memBuf);
         curl_easy_cleanup(URL->x.curl);
+#endif
     }
     free(URL);
 }

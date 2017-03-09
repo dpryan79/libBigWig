@@ -40,15 +40,19 @@ int bwInit(size_t defaultBufSize) {
     GLOBAL_DEFAULTBUFFERSIZE = defaultBufSize;
 
     //call curl_global_init()
+#ifndef NOCURL
     CURLcode rv;
     rv = curl_global_init(CURL_GLOBAL_ALL);
     if(rv != CURLE_OK) return 1;
+#endif
     return 0;
 }
 
 //This should be called before quiting, to release memory acquired by curl
 void bwCleanup() {
+#ifndef NOCURL
     curl_global_cleanup();
+#endif
 }
 
 static bwZoomHdr_t *bwReadZoomHdrs(bigWigFile_t *bw) {

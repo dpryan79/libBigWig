@@ -1,4 +1,12 @@
+#ifndef NOCURL
 #include <curl/curl.h>
+#else
+#include <stdio.h>
+typedef int CURLcode;
+typedef void CURL;
+#define CURLE_OK 0
+#define CURLE_FAILED_INIT 1
+#endif
 /*! \file io.h
  * These are (typically internal) IO functions, so there's generally no need for you to directly use them!
  */
@@ -23,7 +31,9 @@ enum bigWigFile_type_enum {
  */
 typedef struct {
     union {
+#ifndef NOCURL
         CURL *curl; /**<The CURL * file pointer for remote files.*/
+#endif
         FILE *fp; /**<The FILE * file pointer for local files.**/
     } x; /**<A union holding curl and fp.*/
     void *memBuf; /**<A void * pointing to memory of size bufSize.*/
