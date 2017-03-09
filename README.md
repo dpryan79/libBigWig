@@ -234,3 +234,7 @@ The results of `min`, `max`, and `mean` should be the same as those from `BigWig
 # Python interface
 
 There are currently two python interfaces that make use of libBigWig: [pyBigWig](https://github.com/dpryan79/pyBigWig) by me and [bw-python](https://github.com/brentp/bw-python) by Brent Pederson. Those interested are encouraged to give both a try!
+
+# Building without remote file access
+
+If you want to compile without remote file access (e.g., you don't have curl installed), then you can append `-DNOCURL` to the `CFLAGS` line in the `Makefile`. You will also need to remove `-lcurl` from the `LIBS` line.
