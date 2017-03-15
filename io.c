@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include "io.h"
 #include <inttypes.h>
+#include <errno.h>
 
 size_t GLOBAL_DEFAULTBUFFERSIZE;
 
@@ -37,6 +38,7 @@ CURLcode urlFetchData(URL_t *URL, unsigned long bufSize) {
     }
 
     rv = curl_easy_perform(URL->x.curl);
+    errno = 0; //Sometimes curl_easy_perform leaves a random errno remnant
     return rv;
 }
 
@@ -227,6 +229,7 @@ URL_t *urlOpen(char *fname, CURLcode (*callBack)(CURL*), const char *mode) {
                 }
             }
             code = curl_easy_perform(URL->x.curl);
+            errno = 0; //Sometimes curl_easy_perform leaves a random errno remnant
             if(code != CURLE_OK) {
                 fprintf(stderr, "[urlOpen] curl_easy_perform received an error: %s\n", curl_easy_strerror(code));
                 goto error;
