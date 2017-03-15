@@ -56,7 +56,7 @@ The only functions and structures that end users need to care about are in "bigW
         return 0;
     }
 
-##Writing example
+## Writing example
 
 N.B., creation of bigBed files is not supported (there are no plans to change this).
 
