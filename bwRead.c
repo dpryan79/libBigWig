@@ -157,6 +157,9 @@ static void bwHdrRead(bigWigFile_t *bw) {
         if(bwRead((void*) &(bw->hdr->sumSquared), sizeof(uint64_t), 1, bw) != 1) goto error;
     }
 
+    //In case of uncompressed remote files, let the IO functions know to request larger chunks
+    bw->URL->isCompressed = (bw->hdr->bufSize > 0)?1:0;
+
     return;
 
 error:
