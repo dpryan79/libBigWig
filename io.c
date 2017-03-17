@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include "io.h"
 #include <inttypes.h>
+#include <errno.h>
 
 size_t GLOBAL_DEFAULTBUFFERSIZE;
 
@@ -37,15 +38,17 @@ CURLcode urlFetchData(URL_t *URL, unsigned long bufSize) {
     }
 
     rv = curl_easy_perform(URL->x.curl);
+    errno = 0; //Sometimes curl_easy_perform leaves a random errno remnant
     return rv;
 }
 
 //Read data into a buffer, ideally from a buffer already in memory
 //The loop is likely no longer needed.
 size_t url_fread(void *obuf, size_t obufSize, URL_t *URL) {
-    size_t remaining = obufSize;
+    size_t remaining = obufSize, fetchSize;
     void *p = obuf;
     CURLcode rv;
+
     while(remaining) {
         if(!URL->bufLen) {
             rv = urlFetchData(URL, URL->bufSize);
@@ -59,7 +62,12 @@ size_t url_fread(void *obuf, size_t obufSize, URL_t *URL) {
             p += URL->bufLen - URL->bufPos;
             remaining -= URL->bufLen - URL->bufPos;
             if(remaining) {
-                rv = urlFetchData(URL, (remaining<URL->bufSize)?remaining:URL->bufSize);
+                if(!URL->isCompressed) {
+                    fetchSize = URL->bufSize;
+                } else {
+                    fetchSize = (remaining<URL->bufSize)?remaining:URL->bufSize;
+                }
+                rv = urlFetchData(URL, fetchSize);
                 if(rv != CURLE_OK) {
                     fprintf(stderr, "[url_fread] urlFetchData (B) returned %s\n", curl_easy_strerror(rv));
                     return 0;
@@ -227,6 +235,7 @@ URL_t *urlOpen(char *fname, CURLcode (*callBack)(CURL*), const char *mode) {
                 }
             }
             code = curl_easy_perform(URL->x.curl);
+            errno = 0; //Sometimes curl_easy_perform leaves a random errno remnant
             if(code != CURLE_OK) {
                 fprintf(stderr, "[urlOpen] curl_easy_perform received an error: %s\n", curl_easy_strerror(code));
                 goto error;
