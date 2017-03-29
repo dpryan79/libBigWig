@@ -202,6 +202,11 @@ URL_t *urlOpen(char *fname, CURLcode (*callBack)(CURL*), const char *mode) {
                 fprintf(stderr, "[urlOpen] curl_easy_init() failed!\n");
                 goto error;
             }
+            //Negotiate a reasonable HTTP authentication method
+            if(curl_easy_setopt(URL->x.curl, CURLOPT_HTTPAUTH, CURLAUTH_ANY) != CURLE_OK) {
+                fprintf(stderr, "[urlOpen] Failed instructing curl to use any HTTP authentication it finds to be suitable!\n");
+                goto error;
+            }
             //Follow redirects
             if(curl_easy_setopt(URL->x.curl, CURLOPT_FOLLOWLOCATION, 1L) != CURLE_OK) {
                 fprintf(stderr, "[urlOpen] Failed instructing curl to follow redirects!\n");
