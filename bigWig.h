@@ -53,7 +53,7 @@ extern "C" {
 /*!
  * The library version number
  */
-#define LIBBIGWIG_VERSION 0.3.2
+#define LIBBIGWIG_VERSION 0.3.3
 
 /*!
  * If 1, then this library was compiled with remote file support.
