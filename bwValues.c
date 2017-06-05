@@ -158,7 +158,7 @@ static bwOverlapBlock_t *overlapsLeaf(bwRTreeNode_t *node, uint32_t tid, uint32_
 
         for(i=0; i<node->nChildren; i++) {
             if(tid < node->chrIdxStart[i]) break;
-            if(tid < node->chrIdxStart[i] || tid > node->chrIdxEnd[i]) continue;
+            if(tid > node->chrIdxEnd[i]) continue;
             if(node->chrIdxStart[i] != node->chrIdxEnd[i]) {
                 if(tid == node->chrIdxStart[i]) {
                     if(node->baseStart[i] >= end) continue;
@@ -227,7 +227,7 @@ static bwOverlapBlock_t *overlapsNonLeaf(bigWigFile_t *fp, bwRTreeNode_t *node, 
 
     for(i=0; i<node->nChildren; i++) {
         if(tid < node->chrIdxStart[i]) break;
-        if(tid < node->chrIdxStart[i] || tid > node->chrIdxEnd[i]) continue;
+        if(tid > node->chrIdxEnd[i]) continue;
         if(node->chrIdxStart[i] != node->chrIdxEnd[i]) { //child spans contigs
             if(tid == node->chrIdxStart[i]) {
                 if(node->baseStart[i] >= end) continue;
