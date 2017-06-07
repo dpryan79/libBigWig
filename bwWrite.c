@@ -784,11 +784,17 @@ int makeZoomLevels(bigWigFile_t *fp) {
     uint16_t nLevels = 0;
 
     meanBinSize = ((double) fp->writeBuffer->runningWidthSum)/(fp->writeBuffer->nEntries);
-    //In reality, one level is skipped
-    meanBinSize *= 4;
     //N.B., we must ALWAYS check that the zoom doesn't overflow a uint32_t!
-    if(((uint32_t)-1)>>2 < meanBinSize) return 0; //No zoom levels!
-    if(meanBinSize*4 > zoom) zoom = multiplier*meanBinSize;
+    if(((uint32_t)-1)>>4 < meanBinSize) { //The entries are HUGE! Make 1 zoom level of the meanBinSize
+        meanBinSize >>= 2;
+        zoom = meanBinSize;
+        fp->hdr->nLevels = 1;
+    } else {
+        //In reality, one level is skipped
+        meanBinSize *= 4;
+        //Prevent single absurdly small zoom levels
+        if(meanBinSize*4 > zoom) zoom = multiplier*meanBinSize;
+    }
 
     fp->hdr->zoomHdrs = calloc(1, sizeof(bwZoomHdr_t));
     if(!fp->hdr->zoomHdrs) return 1;
