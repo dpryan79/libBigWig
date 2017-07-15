@@ -270,11 +270,13 @@ bwIteratorDestroy(iter);
 </pre><h1>A note on bigWig statistics</h1>
 <p>The results of <code>min</code>, <code>max</code>, and <code>mean</code> should be the same as those from <code>BigWigSummary</code>. <code>stdev</code> and <code>coverage</code>, however, may differ due to Kent's tools producing incorrect results (at least for <code>coverage</code>, though the same appears to be the case for <code>stdev</code>).</p>
 <h1>Python interface</h1>
-<p>There are currently two python interfaces that make use of libBigWig: <a href="https://github.com/dpryan79/pyBigWig">pyBigWig</a> by me and <a href="https://github.com/brentp/bw-python">bw-python</a> by Brent Pederson. Those interested are encouraged to give both a try! </p>
+<p>There are currently two python interfaces that make use of libBigWig: <a href="https://github.com/dpryan79/pyBigWig">pyBigWig</a> by me and <a href="https://github.com/brentp/bw-python">bw-python</a> by Brent Pederson. Those interested are encouraged to give both a try!</p>
+<h1>Building without remote file access</h1>
+<p>If you want to compile without remote file access (e.g., you don't have curl installed), then you can append <code>-DNOCURL</code> to the <code>CFLAGS</code> line in the <code>Makefile</code>. You will also need to remove <code>-lcurl</code> from the <code>LIBS</code> line. </p>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Nov 18 2016 22:54:37 for libBigWig by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Jul 15 2017 14:46:21 for libBigWig by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.11
 </small></address>

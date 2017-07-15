@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['x',['x',['../structbwRTreeNode__t.html#a5d4127fac68dc3dc91c1283f8102e100',1,'bwRTreeNode_t::x()'],['../structURL__t.html#ad063b18d976f45276ed3a014ac339e5f',1,'URL_t::x()']]]
+  ['x',['x',['../structURL__t.html#a63b0ae93630e20a126186d856797e78a',1,'URL_t::x()'],['../structbwRTreeNode__t.html#aa55ddacdf7ed257a71bd7560e9a07157',1,'bwRTreeNode_t::x()']]]
 ];
