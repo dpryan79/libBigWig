@@ -1,4 +1,4 @@
-#include "BigWigIO.h"
+#include "bigWigIO.h"
 #include "bwValues.h"
 #include <inttypes.h>
 #include <zlib.h>
