@@ -90,18 +90,24 @@ static int writeAtPos(void *ptr, size_t sz, size_t nmemb, size_t pos, FILE *fp) 
     return 0;
 }
 
-//Are nblocks and nperblock correct?
 //We lose keySize bytes on error
 static int writeChromList(FILE *fp, chromList_t *cl) {
     uint16_t k;
     uint32_t j, magic = CIRTREE_MAGIC;
-    uint32_t nperblock = (cl->nKeys>0xFFFF)?-1:cl->nKeys; //Items per leaf/non-leaf
-    uint32_t nblocks = (cl->nKeys>>16)+1, keySize = 0, valSize = 8; //does the valSize even matter? I ignore it...
-    uint64_t i, written = 0;
+    uint32_t nperblock = (cl->nKeys > 0x7FFF) ? 0x7FFF : cl->nKeys; //Items per leaf/non-leaf, there are no unsigned ints in java :(
+    uint32_t nblocks, keySize = 0, valSize = 8; //In theory valSize could be optimized, in practice that'd be annoying
+    uint64_t i, nonLeafEnd, leafSize, nextLeaf;
     uint8_t eight;
     int64_t i64;
     char *chrom;
     size_t l;
+
+    if(cl->nKeys > 1073676289) {
+        fprintf(stderr, "[writeChromList] Error: Currently only 1,073,676,289 contigs are supported. If you really need more then please post a request on github.\n");
+        return 1;
+    }
+    nblocks = cl->nKeys/nperblock;
+    nblocks += ((cl->nKeys % nperblock) > 0)?1:0;
 
     for(i64=0; i64<cl->nKeys; i64++) {
         l = strlen(cl->chrom[i64]);
@@ -122,32 +128,53 @@ static int writeChromList(FILE *fp, chromList_t *cl) {
     if(fwrite(&i, sizeof(uint64_t), 1, fp) != 1) return 6;
 
     //Do we need a non-leaf node?
-    if(nblocks>1) {
+    if(nblocks > 1) {
         eight = 0;
         if(fwrite(&eight, sizeof(uint8_t), 1, fp) != 1) return 7;
         if(fwrite(&eight, sizeof(uint8_t), 1, fp) != 1) return 8; //padding
-        j = 0;
-        for(i=0; i<nperblock; i++) { //Why yes, this is pointless
+        if(fwrite(&nblocks, sizeof(uint16_t), 1, fp) != 1) return 8;
+        nonLeafEnd = ftell(fp) + nperblock * (keySize + 8);
+        leafSize = nperblock * (keySize + 8) + 4;
+        for(i=0; i<nblocks; i++) { //Why yes, this is pointless
+            chrom = strncpy(chrom, cl->chrom[i * nperblock], keySize);
+            nextLeaf = nonLeafEnd + i * leafSize;
             if(fwrite(chrom, keySize, 1, fp) != 1) return 9;
-            if(fwrite(&j, sizeof(uint64_t), 1, fp) != 1) return 10;
+            if(fwrite(&nextLeaf, sizeof(uint64_t), 1, fp) != 1) return 10;
+        }
+        for(i=0; i<keySize; i++) chrom[i] = '\0';
+        nextLeaf = 0;
+        for(i=nblocks; i<nperblock; i++) {
+            if(fwrite(chrom, keySize, 1, fp) != 1) return 9;
+            if(fwrite(&nextLeaf, sizeof(uint64_t), 1, fp) != 1) return 10;
         }
     }
 
     //Write the leaves
+    nextLeaf = 0;
     for(i=0, j=0; i<nblocks; i++) {
         eight = 1;
         if(fwrite(&eight, sizeof(uint8_t), 1, fp) != 1) return 11;
         eight = 0;
         if(fwrite(&eight, sizeof(uint8_t), 1, fp) != 1) return 12;
-        if(cl->nKeys - written < nperblock) nperblock = cl->nKeys - written;
-        if(fwrite(&nperblock, sizeof(uint16_t), 1, fp) != 1) return 13;
+        if(cl->nKeys - j < nperblock) {
+            k = cl->nKeys - j;
+            if(fwrite(&k, sizeof(uint16_t), 1, fp) != 1) return 13;
+        } else {
+            if(fwrite(&nperblock, sizeof(uint16_t), 1, fp) != 1) return 13;
+        }
         for(k=0; k<nperblock; k++) {
-            if(j>=cl->nKeys) return 14;
-            chrom = strncpy(chrom, cl->chrom[j], keySize);
-            if(fwrite(chrom, keySize, 1, fp) != 1) return 15;
-            if(fwrite(&j, sizeof(uint32_t), 1, fp) != 1) return 16;
-            if(fwrite(&(cl->len[j++]), sizeof(uint32_t), 1, fp) != 1) return 17;
-            written++;
+            if(j>=cl->nKeys) {
+                if(chrom[0]) {
+                    for(l=0; l<keySize; l++) chrom[l] = '\0';
+                }
+                if(fwrite(chrom, keySize, 1, fp) != 1) return 15;
+                if(fwrite(&nextLeaf, sizeof(uint64_t), 1, fp) != 1) return 16;
+            } else {
+                chrom = strncpy(chrom, cl->chrom[j], keySize);
+                if(fwrite(chrom, keySize, 1, fp) != 1) return 15;
+                if(fwrite(&j, sizeof(uint32_t), 1, fp) != 1) return 16;
+                if(fwrite(&(cl->len[j++]), sizeof(uint32_t), 1, fp) != 1) return 17;
+            }
         }
     }
 
@@ -709,7 +736,7 @@ int writeIndex(bigWigFile_t *fp) {
     bwLL *ll = fp->writeBuffer->firstIndexNode, *p;
     bwRTreeNode_t *root = NULL;
 
-    if(!fp->writeBuffer->nBlocks) return 1;
+    if(!fp->writeBuffer->nBlocks) return 0;
     fp->idx = malloc(sizeof(bwRTree_t));
     if(!fp->idx) return 2;
     fp->idx->root = root;
@@ -784,17 +811,11 @@ int makeZoomLevels(bigWigFile_t *fp) {
     uint16_t nLevels = 0;
 
     meanBinSize = ((double) fp->writeBuffer->runningWidthSum)/(fp->writeBuffer->nEntries);
+    //In reality, one level is skipped
+    meanBinSize *= 4;
     //N.B., we must ALWAYS check that the zoom doesn't overflow a uint32_t!
-    if(((uint32_t)-1)>>4 < meanBinSize) { //The entries are HUGE! Make 1 zoom level of the meanBinSize
-        meanBinSize >>= 2;
-        zoom = meanBinSize;
-        fp->hdr->nLevels = 1;
-    } else {
-        //In reality, one level is skipped
-        meanBinSize *= 4;
-        //Prevent single absurdly small zoom levels
-        if(meanBinSize*4 > zoom) zoom = multiplier*meanBinSize;
-    }
+    if(((uint32_t)-1)>>2 < meanBinSize) return 0; //No zoom levels!
+    if(meanBinSize*4 > zoom) zoom = multiplier*meanBinSize;
 
     fp->hdr->zoomHdrs = calloc(1, sizeof(bwZoomHdr_t));
     if(!fp->hdr->zoomHdrs) return 1;
@@ -1228,7 +1249,7 @@ int bwFinalize(bigWigFile_t *fp) {
     if(writeIndex(fp)) return 4;
 
     //Zoom level stuff here?
-    if(fp->hdr->nLevels) {
+    if(fp->hdr->nLevels && fp->writeBuffer->nBlocks) {
         offset = bwTell(fp);
         if(makeZoomLevels(fp)) return 5;
         if(constructZoomLevels(fp)) return 6;

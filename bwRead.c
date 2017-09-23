@@ -240,7 +240,7 @@ static uint64_t readChromBlock(bigWigFile_t *bw, chromList_t *cl, uint32_t keySi
 static chromList_t *bwReadChromList(bigWigFile_t *bw) {
     chromList_t *cl = NULL;
     uint32_t magic, keySize, valueSize, itemsPerBlock;
-    uint64_t i, rv, itemCount;
+    uint64_t rv, itemCount;
     if(bw->isWrite) return NULL;
     if(bwSetPos(bw, bw->hdr->ctOffset)) return NULL;
 
@@ -252,7 +252,7 @@ static chromList_t *bwReadChromList(bigWigFile_t *bw) {
 
     if(bwRead((void*) &itemsPerBlock, sizeof(uint32_t), 1, bw) != 1) goto error;
     if(bwRead((void*) &keySize, sizeof(uint32_t), 1, bw) != 1) goto error;
-    if(bwRead((void*) &valueSize, sizeof(uint32_t), 1, bw) != 1) goto error; //Unused
+    if(bwRead((void*) &valueSize, sizeof(uint32_t), 1, bw) != 1) goto error;
     if(bwRead((void*) &itemCount, sizeof(uint64_t), 1, bw) != 1) goto error;
 
     cl->nKeys = itemCount;
@@ -261,16 +261,13 @@ static chromList_t *bwReadChromList(bigWigFile_t *bw) {
     if(!cl->chrom) goto error;
     if(!cl->len) goto error;
 
-    if(bwRead((void*) &magic, sizeof(uint32_t), 1, bw) != 1) goto error; //padding
-    if(bwRead((void*) &magic, sizeof(uint32_t), 1, bw) != 1) goto error; //padding
+    if(bwRead((void*) &magic, sizeof(uint32_t), 1, bw) != 1) goto error;
+    if(bwRead((void*) &magic, sizeof(uint32_t), 1, bw) != 1) goto error;
 
     //Read in the blocks
-    i = 0;
-    while(i<itemCount) {
-        rv = readChromBlock(bw, cl, keySize);
-        if(rv == (uint64_t) -1) goto error;
-        i += rv;
-    }
+    rv = readChromBlock(bw, cl, keySize);
+    if(rv == (uint64_t) -1) goto error;
+    if(rv != itemCount) {
 
     return cl;
 
@@ -354,20 +351,33 @@ bigWigFile_t *bwOpen(char *fname, CURLcode (*callBack) (CURL*), const char *mode
     if((!mode) || (strchr(mode, 'w') == NULL)) {
         bwg->isWrite = 0;
         bwg->URL = urlOpen(fname, *callBack, NULL);
-        if(!bwg->URL) goto error;
+        if(!bwg->URL) {
+            fprintf(stderr, "[bwOpen] urlOpen is NULL!\n");
+            goto error;
+        }
 
         //Attempt to read in the fixed header
         bwHdrRead(bwg);
-        if(!bwg->hdr) goto error;
+        if(!bwg->hdr) {
+            fprintf(stderr, "[bwOpen] bwg->hdr is NULL!\n");
+            goto error;
+        }
 
         //Read in the chromosome list
         bwg->cl = bwReadChromList(bwg);
-        if(!bwg->cl) goto error;
+        if(!bwg->cl) {
+            fprintf(stderr, "[bwOpen] bwg->cl is NULL (%s)!\n", fname);
+            goto error;
+        }
 
         //Read in the index
-        bwg->idx = bwReadIndex(bwg, 0);
-        if(!bwg->idx) goto error;
-
+        if(bwg->hdr->nBasesCovered) {
+            bwg->idx = bwReadIndex(bwg, 0);
+            if(!bwg->idx) {
+                fprintf(stderr, "[bwOpen] bwg->idx is NULL bwg->hdr->dataOffset 0x%"PRIx64"!\n", bwg->hdr->dataOffset);
+                goto error;
+            }
+        }
     } else {
         bwg->isWrite = 1;
         bwg->URL = urlOpen(fname, NULL, "w+");

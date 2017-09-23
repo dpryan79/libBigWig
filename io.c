@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "bigWigIO.h"
+#include "io.h"
 #include <inttypes.h>
 #include <errno.h>
 
@@ -125,6 +125,7 @@ CURLcode urlSeek(URL_t *URL, size_t pos) {
     if(URL->type == BWG_FILE) {
 #endif
         if(fseek(URL->x.fp, pos, SEEK_SET) == 0) {
+            errno = 0;
             return CURLE_OK;
         } else {
             return CURLE_FAILED_INIT; //This is arbitrary
@@ -147,6 +148,7 @@ CURLcode urlSeek(URL_t *URL, size_t pos) {
             if(rv != CURLE_OK) {
                 fprintf(stderr, "[urlSeek] curl_easy_perform received an error!\n");
             }
+            errno = 0;  //Don't propogate remnant resolved libCurl errors
             return rv;
         } else {
             URL->bufPos = pos-URL->filePos;
@@ -230,6 +232,15 @@ URL_t *urlOpen(char *fname, CURLcode (*callBack)(CURL*), const char *mode) {
             }
             if(curl_easy_setopt(URL->x.curl, CURLOPT_WRITEDATA, (void*)URL) != CURLE_OK) {
                 fprintf(stderr, "[urlOpen] Couldn't set CURLOPT_WRITEDATA!\n");
+                goto error;
+            }
+            //Ignore certificate errors with https, libcurl just isn't reliable enough with conda
+            if(curl_easy_setopt(URL->x.curl, CURLOPT_SSL_VERIFYPEER, 0) != CURLE_OK) {
+                fprintf(stderr, "[urlOpen] Couldn't set CURLOPT_SSL_VERIFYPEER to 0!\n");
+                goto error;
+            }
+            if(curl_easy_setopt(URL->x.curl, CURLOPT_SSL_VERIFYHOST, 0) != CURLE_OK) {
+                fprintf(stderr, "[urlOpen] Couldn't set CURLOPT_SSL_VERIFYHOST to 0!\n");
                 goto error;
             }
             if(callBack) {
