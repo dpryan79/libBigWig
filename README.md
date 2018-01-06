@@ -229,7 +229,7 @@ A full example is provided in `tests/testIterator.c`, but a small example of ite
 
 # A note on bigWig statistics
 
-The results of `min`, `max`, and `mean` should be the same as those from `BigWigSummary`. `stdev` and `coverage`, however, may differ due to Kent's tools producing incorrect results (at least for `coverage`, though the same appears to be the case for `stdev`).
+The results of `min`, `max`, and `mean` should be the same as those from `BigWigSummary`. `stdev` and `coverage`, however, may differ due to Kent's tools producing incorrect results (at least for `coverage`, though the same appears to be the case for `stdev`). The `sum` method doesn't exist in Kent's tools, so note that if zoom levels are used, that it will multiply the block average by the lesser of the number of bases covered in the block and the number of bases in a block overlapping the desired region.
 
 # Python interface
 
