@@ -11,7 +11,7 @@ try:
 except:
     p2 = Popen(["md5"], stdin=p1.stdout, stdout=PIPE)
 md5sum = p2.communicate()[0].strip().split()[0]
-assert(md5sum == "8f83acc44a86a76998733dea15c4a5e5")
+assert(md5sum == "1c52065211fdc44eea45751a9cbfffe0")
 
 # remote http test
 p1 = Popen(["./test/testRemote", "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeCrgMapabilityAlign50mer.bigWig"], stdout=PIPE)

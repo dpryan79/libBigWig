@@ -202,6 +202,11 @@ int main(int argc, char *argv[]) {
     printf("1:0-200 sum: %f\n", *stats); //72.1
     free(stats);
 
+    stats = bwStats(fp, "1", 100, 151, 2, sum);
+    assert(stats);
+    printf("1:0-200 sum: %f %f\n", stats[0], stats[1]); //35.0, 36.5
+    free(stats);
+
     printf("1:0-200000000 intervals\n");
     intervals = bwGetOverlappingIntervals(fp, "1", 0, 200000000);
     printIntervals(intervals,0);
