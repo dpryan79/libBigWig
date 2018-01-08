@@ -69,8 +69,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="globals.html"><span>All</span></a></li>
       <li><a href="globals_func.html"><span>Functions</span></a></li>
       <li><a href="globals_vars.html"><span>Variables</span></a></li>
+      <li><a href="globals_type.html"><span>Typedefs</span></a></li>
       <li><a href="globals_enum.html"><span>Enumerations</span></a></li>
       <li class="current"><a href="globals_eval.html"><span>Enumerator</span></a></li>
+      <li><a href="globals_defs.html"><span>Macros</span></a></li>
     </ul>
   </div>
 </div><!-- top -->
@@ -79,7 +81,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -90,23 +92,41 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div class="contents">
 &#160;<ul>
-<li>BWG_FILE
-: <a class="el" href="io_8h.html#a53551ff2ef7a2c1b938e94ef9592ab66a07f9ed381769ceb63c451a1bb40f5b20">io.h</a>
+<li>average
+: <a class="el" href="bigWig_8h.html#aa3e01d7486887aa111417b688bc1a22cae478d4d7f90177e87ed05369ad732b25">bigWig.h</a>
 </li>
-<li>BWG_FTP
-: <a class="el" href="io_8h.html#a53551ff2ef7a2c1b938e94ef9592ab66af5f7ba3fdaf11460fa0cd8d7029bbd72">io.h</a>
+<li>cov
+: <a class="el" href="bigWig_8h.html#aa3e01d7486887aa111417b688bc1a22caf866615ac99c2e47027ea68849ef849f">bigWig.h</a>
 </li>
-<li>BWG_HTTP
-: <a class="el" href="io_8h.html#a53551ff2ef7a2c1b938e94ef9592ab66aee96ef6f60b31a844a04e60dde185cc0">io.h</a>
+<li>coverage
+: <a class="el" href="bigWig_8h.html#aa3e01d7486887aa111417b688bc1a22ca02bbe932c03913324065a5318a16e715">bigWig.h</a>
 </li>
-<li>BWG_HTTPS
-: <a class="el" href="io_8h.html#a53551ff2ef7a2c1b938e94ef9592ab66a051c82a10ccf0e9b9dbfea31263ea8b6">io.h</a>
+<li>dev
+: <a class="el" href="bigWig_8h.html#aa3e01d7486887aa111417b688bc1a22cac10cab3311c9fe30fbabf9137cd40d57">bigWig.h</a>
+</li>
+<li>doesNotExist
+: <a class="el" href="bigWig_8h.html#aa3e01d7486887aa111417b688bc1a22ca3dc84a7fe13f0c3b468dd1fcf456ee3a">bigWig.h</a>
+</li>
+<li>max
+: <a class="el" href="bigWig_8h.html#aa3e01d7486887aa111417b688bc1a22ca6eba708e9255d1bb06879b30b47422ff">bigWig.h</a>
+</li>
+<li>mean
+: <a class="el" href="bigWig_8h.html#aa3e01d7486887aa111417b688bc1a22ca73aa25ce744f80bc0f1c0e991a509638">bigWig.h</a>
+</li>
+<li>min
+: <a class="el" href="bigWig_8h.html#aa3e01d7486887aa111417b688bc1a22ca1e491e9b59d4f6891eb2929589487dfc">bigWig.h</a>
+</li>
+<li>stdev
+: <a class="el" href="bigWig_8h.html#aa3e01d7486887aa111417b688bc1a22cac7a4dba588d32e11eaa063e51c491387">bigWig.h</a>
+</li>
+<li>sum
+: <a class="el" href="bigWig_8h.html#aa3e01d7486887aa111417b688bc1a22ca3693895373771b9806a9775d16d1198b">bigWig.h</a>
 </li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 14:17:20 for libBigWig by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Jan 8 2018 13:39:30 for libBigWig by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

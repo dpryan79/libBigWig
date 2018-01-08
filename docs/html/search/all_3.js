@@ -1,6 +1,10 @@
 var searchData=
 [
-  ['end',['end',['../structbwWriteBuffer__t.html#acb9f5c5894ab9bfaf8b80c7d4a161644',1,'bwWriteBuffer_t::end()'],['../structbwOverlappingIntervals__t.html#ae6ed446208634e0e00ec5479865e2a25',1,'bwOverlappingIntervals_t::end()'],['../structbbOverlappingEntries__t.html#ae3ab6113c7cec0992821a370b93ca13c',1,'bbOverlappingEntries_t::end()'],['../structbwOverlapIterator__t.html#ab0f4d0bcb62d2e944a18a4a69e969ab6',1,'bwOverlapIterator_t::end()'],['../structbwDataHeader__t.html#a4512ac08141a2f5634c4b3e0dea27f1b',1,'bwDataHeader_t::end()']]],
-  ['entries',['entries',['../structbwOverlapIterator__t.html#a43364e3fc0f4752d43a064a3bac801db',1,'bwOverlapIterator_t']]],
-  ['extensionoffset',['extensionOffset',['../structbigWigHdr__t.html#a1e74411481d1ae2ff235cb7e98703e97',1,'bigWigHdr_t']]]
+  ['data',['data',['../structbwOverlapIterator__t.html#a897d7561ba0859a127b5f5713e3ff036',1,'bwOverlapIterator_t']]],
+  ['dataoffset',['dataOffset',['../structbwZoomHdr__t.html#a49e66d83c3d0c381c647ce281a2ec80b',1,'bwZoomHdr_t::dataOffset()'],['../structbigWigHdr__t.html#acd901706ed82b0c0cb8fdb43c231c952',1,'bigWigHdr_t::dataOffset()'],['../structbwRTreeNode__t.html#a8d0838a23fbd7164322ef2ee74a63418',1,'bwRTreeNode_t::dataOffset()']]],
+  ['default_5fblocksize',['DEFAULT_BLOCKSIZE',['../bigWig_8h.html#a46a626f6d8b24b07925d82cde2175864',1,'bigWig.h']]],
+  ['default_5fnchildren',['DEFAULT_nCHILDREN',['../bigWig_8h.html#ac0d6303cef22d415a53d150be8f06623',1,'bigWig.h']]],
+  ['definedfieldcount',['definedFieldCount',['../structbigWigHdr__t.html#a2751a957742e5f891032d1f96851f68c',1,'bigWigHdr_t']]],
+  ['dev',['dev',['../bigWig_8h.html#aa3e01d7486887aa111417b688bc1a22cac10cab3311c9fe30fbabf9137cd40d57',1,'bigWig.h']]],
+  ['doesnotexist',['doesNotExist',['../bigWig_8h.html#aa3e01d7486887aa111417b688bc1a22ca3dc84a7fe13f0c3b468dd1fcf456ee3a',1,'bigWig.h']]]
 ];

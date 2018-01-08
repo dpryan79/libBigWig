@@ -1,13 +1,10 @@
 var searchData=
 [
-  ['n',['n',['../structbwOverlapBlock__t.html#a595c8baef7fa72900b4347083f4c9761',1,'bwOverlapBlock_t']]],
-  ['nbasescovered',['nBasesCovered',['../structbigWigHdr__t.html#ad0ab8ed38ed90d9efd36c8e00b45a061',1,'bigWigHdr_t']]],
-  ['nblocks',['nBlocks',['../structbwWriteBuffer__t.html#ae1ca600e3db29278223430e6fea1ce7a',1,'bwWriteBuffer_t']]],
-  ['nchildren',['nChildren',['../structbwRTreeNode__t.html#a286f78e61ff30c50a6b862a62dac119c',1,'bwRTreeNode_t']]],
-  ['nentries',['nEntries',['../structbwWriteBuffer__t.html#a0bd332ebac62207317a25ca548099c51',1,'bwWriteBuffer_t']]],
-  ['nitems',['nItems',['../structbwRTree__t.html#a5f07bf1ea36552d70a59a1c7aea3a329',1,'bwRTree_t::nItems()'],['../structbwDataHeader__t.html#ab11457644d7f5c3590eebeb2696e389c',1,'bwDataHeader_t::nItems()']]],
-  ['nitemsperslot',['nItemsPerSlot',['../structbwRTree__t.html#af339ad528e3ed973bd454123fbded262',1,'bwRTree_t']]],
-  ['nkeys',['nKeys',['../structchromList__t.html#aeebca229e0947ddaeb4a25eedd05857d',1,'chromList_t']]],
-  ['nlevels',['nLevels',['../structbigWigHdr__t.html#ad463547e38f7f36cd5d0c4a732c0b106',1,'bigWigHdr_t']]],
-  ['nnodes',['nNodes',['../structbwWriteBuffer__t.html#a4f12e5edc4c41f8c6e882016309ce115',1,'bwWriteBuffer_t']]]
+  ['m',['m',['../structbwOverlappingIntervals__t.html#a090dfd56a5e7bd7db60f670bc61dd49a',1,'bwOverlappingIntervals_t::m()'],['../structbbOverlappingEntries__t.html#a7bf442cf68923ab4989914ac4a27812c',1,'bbOverlappingEntries_t::m()']]],
+  ['max',['max',['../bigWig_8h.html#aa3e01d7486887aa111417b688bc1a22ca6eba708e9255d1bb06879b30b47422ff',1,'bigWig.h']]],
+  ['maxval',['maxVal',['../structbigWigHdr__t.html#aff0c5d8df557a93e3b50f448992a3f71',1,'bigWigHdr_t']]],
+  ['mean',['mean',['../bigWig_8h.html#aa3e01d7486887aa111417b688bc1a22ca73aa25ce744f80bc0f1c0e991a509638',1,'bigWig.h']]],
+  ['membuf',['memBuf',['../structURL__t.html#ad1d920711f91f388ce7115341b3907cf',1,'URL_t']]],
+  ['min',['min',['../bigWig_8h.html#aa3e01d7486887aa111417b688bc1a22ca1e491e9b59d4f6891eb2929589487dfc',1,'bigWig.h']]],
+  ['minval',['minVal',['../structbigWigHdr__t.html#a67b5de0ad0290fa5b43ef13856a3bc0a',1,'bigWigHdr_t']]]
 ];

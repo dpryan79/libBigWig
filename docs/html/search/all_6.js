@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['hdr',['hdr',['../structbigWigFile__t.html#adfda8de595196dcd66d9594cbd0b30d8',1,'bigWigFile_t']]]
+  ['global_5fdefaultbuffersize',['GLOBAL_DEFAULTBUFFERSIZE',['../bigWigIO_8h.html#a2f4038b5ef0a0e7dc45a20fc0bb83925',1,'io.c']]]
 ];

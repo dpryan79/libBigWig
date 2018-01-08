@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['p',['p',['../structbwWriteBuffer__t.html#adbd1ed0f439084b2b6839ddc5609e793',1,'bwWriteBuffer_t']]]
+  ['offset',['offset',['../structbwOverlapIterator__t.html#a0c34bec4eecfe96b84e7038b45b0433e',1,'bwOverlapIterator_t::offset()'],['../structbwOverlapBlock__t.html#a0bfe76443d7c7bcb60e666eb04594f94',1,'bwOverlapBlock_t::offset()']]]
 ];
