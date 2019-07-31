@@ -1,3 +1,6 @@
+#ifndef LIBBIGWIG_H
+#define LIBBIGWIG_H
+
 #include "bigWigIO.h"
 #include "bwValues.h"
 #include <inttypes.h>
@@ -596,3 +599,5 @@ int bwAppendIntervalSpanSteps(bigWigFile_t *fp, float *values, uint32_t n);
 #ifdef __cplusplus
 }
 #endif
+
+#endif // LIBBIGWIG_H
