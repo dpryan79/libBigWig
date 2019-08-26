@@ -718,10 +718,11 @@ bwOverlappingIntervals_t *bwGetValues(bigWigFile_t *fp, char *chrom, uint32_t st
     output = calloc(1, sizeof(bwOverlappingIntervals_t));
     if(!output) goto error;
     if(includeNA) {
+        float nan = strtod("NaN", NULL);
         output->l = end-start;
-        output->value = malloc((end-start)*sizeof(float));
+        output->value = malloc(output->l*sizeof(float));
         if(!output->value) goto error;
-        for(i=0; i<end-start; i++) output->value[i] = strtod("NaN", NULL);
+        for(i=0; i<output->l; i++) output->value[i] = nan;
         for(i=0; i<intermediate->l; i++) {
             for(j=intermediate->start[i]; j<intermediate->end[i]; j++) {
                 if(j < start || j >= end) continue;
