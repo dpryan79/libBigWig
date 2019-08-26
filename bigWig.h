@@ -444,6 +444,9 @@ void bwIteratorDestroy(bwOverlapIterator_t *iter);
  */
 bwOverlappingIntervals_t *bwGetValues(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end, int includeNA);
 
+
+float *bwGetOverlappingValues(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end);
+
 /*!
  * @brief Determines per-interval bigWig statistics
  * Can determine mean/min/max/coverage/standard deviation of values in one or more intervals in a bigWig file. You can optionally give it an interval and ask for values from X number of sub-intervals.

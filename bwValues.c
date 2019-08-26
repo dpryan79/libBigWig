@@ -388,6 +388,104 @@ error:
     return NULL;
 }
 
+float *bwGetOverlappingValuesCore(bigWigFile_t *fp, bwOverlapBlock_t *o, uint32_t tid, uint32_t ostart, uint32_t oend) {
+    uint64_t L = oend - ostart;
+    uLongf sz = fp->hdr->bufSize, tmp;
+    uint64_t i;
+    uint16_t j;
+    float *output = malloc(L * sizeof(float)), value;
+    int compressed = 0, rv;
+    uint32_t start = 0, end , *p;
+    bwDataHeader_t hdr;
+    void *buf = NULL, *compBuf = NULL;
+    if (!output) goto error;
+    for(i=0; i < L; i++) { output[i] = NAN; }
+    if ((!o) || (!o->n)){
+        return output;
+    }
+
+    if(sz) {
+        compressed = 1;
+        buf = malloc(sz);
+    }
+    sz = 0; //This is now the size of the compressed buffer
+
+    for(i=0; i<o->n; i++) {
+        if(bwSetPos(fp, o->offset[i])) goto error;
+
+        if(sz < o->size[i]) {
+            compBuf = realloc(compBuf, o->size[i]);
+            sz = o->size[i];
+        }
+        if(!compBuf) goto error;
+
+        if(bwRead(compBuf, o->size[i], 1, fp) != 1) goto error;
+        if(compressed) {
+            tmp = fp->hdr->bufSize; //This gets over-written by uncompress
+            rv = uncompress(buf, (uLongf *) &tmp, compBuf, o->size[i]);
+            if(rv != Z_OK) goto error;
+        } else {
+            buf = compBuf;
+        }
+
+        //TODO: ensure that tmp is large enough!
+        bwFillDataHdr(&hdr, buf);
+
+        p = ((uint32_t*) buf);
+        p += 6;
+        if(hdr.tid != tid) continue;
+
+        if(hdr.type == 3) start = hdr.start - hdr.step;
+
+        for(j=0; j<hdr.nItems; j++) {
+            switch(hdr.type) {
+            case 1:
+                start = *p;
+                p++;
+                end = *p;
+                p++;
+                value = *((float *)p);
+                p++;
+                break;
+            case 2:
+                start = *p;
+                p++;
+                end = start + hdr.span;
+                value = *((float *)p);
+                p++;
+                break;
+            case 3:
+                start += hdr.step;
+                end = start+hdr.span;
+                value = *((float *)p);
+                p++;
+                break;
+            default :
+                goto error;
+                break;
+            }
+
+            if(end <= ostart || start >= oend) continue;
+            for(i=(start > ostart ? 0: ostart - start); i<(end > oend ? L: end - start); i++) {
+                    output[i] =  value;
+            }
+        }
+    }
+
+    if(compressed && buf) free(buf);
+    if(compBuf) free(compBuf);
+    return output;
+
+
+
+error:
+    fprintf(stderr, "[bwGetOverlappingValuesCore] Got an error\n");
+    if(output) free(output);
+    if(compressed && buf) free(buf);
+    if(compBuf) free(compBuf);
+    return NULL;
+}
+
 //Returns NULL on error
 bwOverlappingIntervals_t *bwGetOverlappingIntervalsCore(bigWigFile_t *fp, bwOverlapBlock_t *o, uint32_t tid, uint32_t ostart, uint32_t oend) {
     uint64_t i;
@@ -570,6 +668,18 @@ bwOverlappingIntervals_t *bwGetOverlappingIntervals(bigWigFile_t *fp, char *chro
     destroyBWOverlapBlock(blocks);
     return output;
 }
+
+float *bwGetOverlappingValues(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end) {
+    float *output;
+    uint32_t tid = bwGetTid(fp, chrom);
+    if(tid == (uint32_t) -1) return NULL;
+    bwOverlapBlock_t *blocks = bwGetOverlappingBlocks(fp, chrom, start, end);
+    if(!blocks) return NULL;
+    output = bwGetOverlappingValuesCore(fp, blocks, tid, start, end);
+    destroyBWOverlapBlock(blocks);
+    return output;
+}
+
 
 //Like above, but for bigBed files
 bbOverlappingEntries_t *bbGetOverlappingEntries(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end, int withString) {
