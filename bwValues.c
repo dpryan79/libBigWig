@@ -388,7 +388,7 @@ error:
     return NULL;
 }
 
-void bwGetOverlappingValuesCore(bigWigFile_t *fp, bwOverlapBlock_t *o, uint32_t tid, uint32_t ostart, uint32_t oend, float *output) {
+void bwGetOverlappingValuesCore(bigWigFile_t *fp, bwOverlapBlock_t *o, uint32_t tid, uint32_t ostart, uint32_t oend, float missingVal, float *output) {
     uint64_t L = oend - ostart;
     uLongf sz = fp->hdr->bufSize, tmp;
     uint64_t i, k;
@@ -399,7 +399,7 @@ void bwGetOverlappingValuesCore(bigWigFile_t *fp, bwOverlapBlock_t *o, uint32_t 
     uint32_t start = 0, end , *p;
     bwDataHeader_t hdr;
     void *buf = NULL, *compBuf = NULL;
-    for(i=0; i < L; i++) { output[i] = NAN; }
+    for(i=0; i < L; i++) { output[i] = missingVal; }
     if ((!o) || (!o->n)){
         return ;
     }
@@ -670,12 +670,12 @@ bwOverlappingIntervals_t *bwGetOverlappingIntervals(bigWigFile_t *fp, char *chro
     return output;
 }
 
-void bwGetOverlappingValues(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end, float *output) {
+void bwGetOverlappingValues(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end, float missingVal, float *output) {
     uint32_t tid = bwGetTid(fp, chrom);
     if(tid == (uint32_t) -1) return;
     bwOverlapBlock_t *blocks = bwGetOverlappingBlocks(fp, chrom, start, end);
     if(!blocks) return;
-    bwGetOverlappingValuesCore(fp, blocks, tid, start, end, output);
+    bwGetOverlappingValuesCore(fp, blocks, tid, start, end, missingVal, output);
     destroyBWOverlapBlock(blocks);
 }
 

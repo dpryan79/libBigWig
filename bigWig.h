@@ -445,7 +445,7 @@ void bwIteratorDestroy(bwOverlapIterator_t *iter);
 bwOverlappingIntervals_t *bwGetValues(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end, int includeNA);
 
 
-void bwGetOverlappingValues(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end, float *output);
+void bwGetOverlappingValues(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end, float missingVal, float *output);
 
 /*!
  * @brief Determines per-interval bigWig statistics
