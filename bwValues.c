@@ -465,8 +465,8 @@ float *bwGetOverlappingValuesCore(bigWigFile_t *fp, bwOverlapBlock_t *o, uint32_
                 break;
             }
 
-            if(end <= ostart || start >= oend) continue;
-            for(i=(start > ostart ? 0: ostart - start); i<(end > oend ? L: end - start); i++) {
+	    if(end <= ostart || start >= oend) continue;
+            for(i=(start < ostart ? 0: (ostart - start)); i<(end > oend ? L: (end - ostart)); i++) {
                     output[i] =  value;
             }
         }
