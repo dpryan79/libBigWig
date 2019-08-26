@@ -1,6 +1,7 @@
 #include "bigWig.h"
 #include "bwCommon.h"
 #include <stdlib.h>
+#include <math.h>
 #include <string.h>
 #include <zlib.h>
 #include <errno.h>
@@ -719,9 +720,9 @@ bwOverlappingIntervals_t *bwGetValues(bigWigFile_t *fp, char *chrom, uint32_t st
     if(!output) goto error;
     if(includeNA) {
         output->l = end-start;
-        output->value = malloc((end-start)*sizeof(float));
+        output->value = malloc(output->l*sizeof(float));
         if(!output->value) goto error;
-        for(i=0; i<end-start; i++) output->value[i] = strtod("NaN", NULL);
+        for(i=0; i<output->l; i++) output->value[i] = NAN;
         for(i=0; i<intermediate->l; i++) {
             for(j=intermediate->start[i]; j<intermediate->end[i]; j++) {
                 if(j < start || j >= end) continue;
