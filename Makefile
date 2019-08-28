@@ -46,6 +46,9 @@ libBigWig.so: $(OBJS:.o=.pico)
 test/testLocal: libBigWig.a
 	$(CC) -o $@ -I. $(CFLAGS) test/testLocal.c libBigWig.a $(LIBS)
 
+test/testValues: libBigWig.a test/testValues.c
+	$(CC) -o $@ -I. $(CFLAGS) test/testValues.c libBigWig.a $(LIBS)
+
 test/testRemoteManyContigs: libBigWig.a
 	$(CC) -o $@ -I. $(CFLAGS) test/testRemoteManyContigs.c libBigWig.a $(LIBS)
 
@@ -64,11 +67,11 @@ test/testBigBed: libBigWig.a
 test/testIterator: libBigWig.a
 	$(CC) -o $@ -I. $(CFLAGS) test/testIterator.c libBigWig.a $(LIBS)
 
-test: test/testLocal test/testRemote test/testWrite test/testLocal test/exampleWrite test/testRemoteManyContigs test/testBigBed test/testIterator
+test: test/testLocal test/testRemote test/testValues test/testWrite test/testLocal test/exampleWrite test/testRemoteManyContigs test/testBigBed test/testIterator
 	./test/test.py
 
 clean:
-	rm -f *.o libBigWig.a libBigWig.so *.pico test/testLocal test/testRemote test/testWrite test/exampleWrite test/testRemoteManyContigs test/testBigBed test/testIterator example_output.bw
+	rm -f *.o libBigWig.a libBigWig.so *.pico test/testLocal test/testRemote test/testWrite test/testValues test/exampleWrite test/testRemoteManyContigs test/testBigBed test/testIterator example_output.bw test/output2.bw
 
 install: libBigWig.a libBigWig.so
 	install -d $(prefix)/lib $(prefix)/include
