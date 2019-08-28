@@ -445,6 +445,20 @@ void bwIteratorDestroy(bwOverlapIterator_t *iter);
 bwOverlappingIntervals_t *bwGetValues(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end, int includeNA);
 
 
+/*!
+ * @brief fill a pre-allocated buffer with per-base bigWig values.
+ * Given an interval (e.g., chr1:100-200), set the value at each position in a bigWig file
+ * such that array index 0 will be position 100 from chromosome 1.
+ * Positions without associated values are set to missingVal.
+ * @param fp A valid bigWigFile_t pointer.
+ * @param chrom A valid chromosome name.
+ * @param start The start position of the interval. This is 0-based half open, so 0 is the first base.
+ * @param end The end position of the interval. Again, this is 0-based half open, so 100 will include the 100th base...which is at position 99.
+ * @param missingVal portions of the query region without data are set to this value.
+ * @param output a buffer which must be allocated to at least size end-start.
+ * @see bwGetValues
+ * @see bwGetOverlappingIntervals
+ */
 void bwGetOverlappingValues(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end, float missingVal, float *output);
 
 /*!

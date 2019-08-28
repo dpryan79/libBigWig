@@ -470,7 +470,7 @@ void bwGetOverlappingValuesCore(bigWigFile_t *fp, bwOverlapBlock_t *o, uint32_t 
             lo = start < ostart ? 0: (start - ostart);
             hi = end > oend ? L: (end - ostart);
             for(k=lo; k < hi; k++){
-                    output[k] =  value;
+                    output[k] += value;
             }
         }
     }
@@ -478,7 +478,6 @@ void bwGetOverlappingValuesCore(bigWigFile_t *fp, bwOverlapBlock_t *o, uint32_t 
     if(compressed && buf) free(buf);
     if(compBuf) free(compBuf);
     return;
-
 
 error:
     fprintf(stderr, "[bwGetOverlappingValuesCore] Got an error\n");
