@@ -430,48 +430,62 @@ void bwGetOverlappingValuesCore(bigWigFile_t *fp, bwOverlapBlock_t *o, uint32_t 
 
         //TODO: ensure that tmp is large enough!
         bwFillDataHdr(&hdr, buf);
-
         p = ((uint32_t*) buf);
         p += 6;
         if(hdr.tid != tid) continue;
 
-        if(hdr.type == 3) start = hdr.start - hdr.step;
-
-        for(j=0; j<hdr.nItems; j++) {
-            switch(hdr.type) {
-            case 1:
-                start = *p;
-                p++;
-                end = *p;
-                p++;
-                value = *((float *)p);
-                p++;
-                break;
-            case 2:
-                start = *p;
-                p++;
-                end = start + hdr.span;
-                value = *((float *)p);
-                p++;
-                break;
-            case 3:
-                start += hdr.step;
-                end = start+hdr.span;
-                value = *((float *)p);
-                p++;
-                break;
-            default :
-                goto error;
-                break;
+        if(hdr.type == 3) { start = hdr.start - hdr.step; }
+        if(hdr.type == 3 && hdr.step == 1){
+            j=0;
+            start++; // add back the hdr.step we removed above.
+            while(start < ostart) {
+                start++; p++; j++;
             }
-            if(isnan(value)) { continue; }
-
-            if(end <= ostart || start >= oend) continue;
-            lo = start < ostart ? 0: (start - ostart);
-            hi = end > oend ? L: (end - ostart);
-            for(k=lo; k < hi; k++){
-                    output[k] += value;
+            // `output` buffer has guaranteed oend-ostart length. so we make sure not to go past the end.
+            int jstop = (int)(oend - start) < (hdr.nItems - j) ? (oend - start) : hdr.nItems;
+            for(; j<jstop;j++){
+                output[start - ostart] = *((float *)p);
+                start++;
+                p++;
             }
+        } else {
+                for(j=0; j<hdr.nItems; j++) {
+                    switch(hdr.type) {
+                    case 1:
+                        start = *p;
+                        p++;
+                        end = *p;
+                        p++;
+                        value = *((float *)p);
+                        p++;
+                        break;
+                    case 2:
+                        start = *p;
+                        p++;
+                        end = start + hdr.span;
+                        value = *((float *)p);
+                        p++;
+                        break;
+                    case 3:
+                       start += hdr.step;
+                       end = start+hdr.span;
+                       value = *((float *)p);
+                       p++;
+                       break;
+                    default :
+                        goto error;
+                        break;
+                    }
+                    //fprintf(stderr, "%d %d\n", hdr.type, end - start);
+                    if(isnan(value)) { continue; }
+
+                    if(end <= ostart || start >= oend) continue;
+                    lo = start < ostart ? 0: (start - ostart);
+                    hi = end > oend ? L: (end - ostart);
+                    for(k=lo; k < hi; k++){
+                            output[k] += value;
+                    }
+                }
         }
     }
 
