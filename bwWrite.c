@@ -1019,7 +1019,7 @@ error:
 
 //Get all of the intervals and add them to the appropriate zoomBuffer
 int constructZoomLevels(bigWigFile_t *fp) {
-    bwOverlappingIntervals_t *intervals = NULL;
+    bwOverlapIterator_t *it = NULL;
     double *sum = NULL, *sumsq = NULL;
     uint32_t i, j, k;
 
@@ -1028,15 +1028,19 @@ int constructZoomLevels(bigWigFile_t *fp) {
     if(!sum || !sumsq) goto error;
 
     for(i=0; i<fp->cl->nKeys; i++) {
-        intervals = bwGetOverlappingIntervals(fp, fp->cl->chrom[i], 0, fp->cl->len[i]);
-        if(!intervals) goto error;
-        for(j=0; j<intervals->l; j++) {
-            for(k=0; k<fp->hdr->nLevels; k++) {
-                if(addIntervalValue(fp, &(fp->writeBuffer->nNodes[k]), sum+k, sumsq+k, fp->writeBuffer->lastZoomBuffer[k], fp->hdr->bufSize/32, fp->hdr->zoomHdrs->level[k], i, intervals->start[j], intervals->end[j], intervals->value[j])) goto error;
-                while(fp->writeBuffer->lastZoomBuffer[k]->next) fp->writeBuffer->lastZoomBuffer[k] = fp->writeBuffer->lastZoomBuffer[k]->next;
-            }
-        }
-        bwDestroyOverlappingIntervals(intervals);
+        it = bwOverlappingIntervalsIterator(fp, fp->cl->chrom[i], 0, fp->cl->len[i], 100000);
+        if(!it) goto error;
+	while(it->data != NULL){
+	  for(j=0;j<it->intervals->l;j++){
+		for(k=0;k<fp->hdr->nLevels;k++){
+			if(addIntervalValue(fp, &(fp->writeBuffer->nNodes[k]), sum+k, sumsq+k, fp->writeBuffer->lastZoomBuffer[k], fp->hdr->bufSize/32, fp->hdr->zoomHdrs->level[k], i, it->intervals->start[j], it->intervals->end[j], it->intervals->value[j])) goto error;
+			while(fp->writeBuffer->lastZoomBuffer[k]->next) fp->writeBuffer->lastZoomBuffer[k] = fp->writeBuffer->lastZoomBuffer[k]->next;
+		}
+	  }
+	  it = bwIteratorNext(it);
+	}
+	bwIteratorDestroy(it);
+
     }
 
     //Make an index for each zoom level
@@ -1046,13 +1050,14 @@ int constructZoomLevels(bigWigFile_t *fp) {
         fp->hdr->zoomHdrs->idx[i]->blockSize = fp->writeBuffer->blockSize;
     }
 
+
     free(sum);
     free(sumsq);
 
     return 0;
 
 error:
-    if(intervals) bwDestroyOverlappingIntervals(intervals);
+    if(it) bwIteratorDestroy(it);
     if(sum) free(sum);
     if(sumsq) free(sumsq);
     return 1;
