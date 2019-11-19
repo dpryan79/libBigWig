@@ -2,6 +2,8 @@ name: Artifacts
 on:
   check_suite:
     types: [requested, completed]
+  issue_comment:
+    types: [created]
 
 jobs:
   report_artifacts:
