@@ -10,12 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     name: Report Artifacts
     steps:
-    - uses: actions/checkout@v1
-    - name: foo
-      run: ls -l
-#    - name: debug
-#      env:
-#        JOB_CONTEXT: ${{ toJson(github }}
-#        STEP_CONTEXT: ${{ toJson(steps}}
-#        RUNNER_CONTEXT: ${{ toJson(runner}}
-#      run: env
+    - name: debug
+      env:
+        JOB_CONTEXT: ${{ toJson(github }}
+        STEP_CONTEXT: ${{ toJson(steps}}
+        RUNNER_CONTEXT: ${{ toJson(runner}}
+      run: env
