@@ -13,6 +13,6 @@ jobs:
     - name: debug
       env:
         JOB_CONTEXT: ${{ toJson(github }}
-        STEP_CONTEXT: ${{ toJson(steps}}
-        RUNNER_CONTEXT: ${{ toJson(runner}}
+        STEP_CONTEXT: ${{ toJson(steps) }}
+        RUNNER_CONTEXT: ${{ toJson(runner) }}
       run: env
