@@ -1,5 +1,5 @@
 name: Report artifacts
-on: [check_run]
+on: [check_suite]
 #    types: [completed]
 #  pull_request:
 #    types: [ready_for_review]
