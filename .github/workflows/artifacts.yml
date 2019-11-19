@@ -1,8 +1,7 @@
 name: Report artifacts
-on: [check_suite]
-#    types: [completed]
-#  pull_request:
-#    types: [ready_for_review]
+on:
+  check_suite:
+    types: [requested, completed]
 
 jobs:
   report_artifacts:
