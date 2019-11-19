@@ -2,7 +2,7 @@ sudo: false
 language: c
 os:
   - linux
-  - osx
+#  - osx
 script: make && make test
 compiler:
   - clang
