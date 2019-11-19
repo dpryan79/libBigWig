@@ -1,4 +1,4 @@
-name: Report artifacts
+name: Artifacts
 on:
   check_suite:
     types: [requested, completed]
@@ -9,9 +9,11 @@ jobs:
     name: Report Artifacts
     steps:
     - uses: actions/checkout@v1
-    - name: debug
-      env:
-        JOB_CONTEXT: ${{ toJson(github }}
-        STEP_CONTEXT: ${{ toJson(steps}}
-        RUNNER_CONTEXT: ${{ toJson(runner}}
-      run: env
+    - name: foo
+      run: ls -l
+#    - name: debug
+#      env:
+#        JOB_CONTEXT: ${{ toJson(github }}
+#        STEP_CONTEXT: ${{ toJson(steps}}
+#        RUNNER_CONTEXT: ${{ toJson(runner}}
+#      run: env
