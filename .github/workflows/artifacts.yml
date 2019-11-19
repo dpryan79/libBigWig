@@ -14,5 +14,4 @@ jobs:
     - name: debug
       env:
         JOB_CONTEXT: ${{ toJson(github) }}
-      run: |
-        env && git branch
+      run: env && git branch
