@@ -63,8 +63,11 @@ extern "C" {
  */
 #ifdef NOCURL
 #define LIBBIGWIG_CURL 0
+#ifndef CURLTYPE_DEFINED
+#define CURLTYPE_DEFINED
 typedef int CURLcode;
 typedef void CURL;
+#endif
 #else
 #define LIBBIGWIG_CURL 1
 #endif

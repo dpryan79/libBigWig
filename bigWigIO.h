@@ -5,8 +5,11 @@
 #include <curl/curl.h>
 #else
 #include <stdio.h>
+#ifndef CURLTYPE_DEFINED
+#define CURLTYPE_DEFINED
 typedef int CURLcode;
 typedef void CURL;
+#endif
 #define CURLE_OK 0
 #define CURLE_FAILED_INIT 1
 #endif
