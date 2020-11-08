@@ -8,7 +8,7 @@ LDFLAGS =
 LDLIBS =
 INCLUDES = 
 
-# Create a simple test-program to check if gcc can compile with curl is available
+# Create a simple test-program to check if gcc can compile with curl
 tmpfile:=$(shell mktemp --suffix=.c)
 $(file >$(tmpfile),#include <curl/curl.h>)
 $(file >>$(tmpfile),int main() { return 0; })
