@@ -2,11 +2,27 @@ CC ?= gcc
 AR ?= ar
 RANLIB ?= ranlib
 CFLAGS ?= -g -Wall -O3 -Wsign-compare
-LIBS = -lcurl -lm -lz
+LIBS = -lm -lz
 EXTRA_CFLAGS_PIC = -fpic
 LDFLAGS =
 LDLIBS =
 INCLUDES = 
+
+# Create a simple test-program to check if gcc can compile with curl
+tmpfile:=$(shell mktemp --suffix=.c)
+$(file >$(tmpfile),#include <curl/curl.h>)
+$(file >>$(tmpfile),int main() { return 0; })
+HAVE_CURL:=$(shell $(CC) $(CFLAGS) $(EXTRA_CFLAGS_PIC) $(LIBS) -lcurl $(tmpfile) -o /dev/null >/dev/null 2>&1 && echo "YES")
+$(shell rm $(tmpfile))
+
+ifeq ($(HAVE_CURL),YES)
+	# If yes, add the library
+	LIBS += -lcurl
+else
+	# and if not, disable CURL specific code compilation
+	CFLAGS += -DNOCURL
+endif
+
 
 prefix = /usr/local
 includedir = $(prefix)/include
