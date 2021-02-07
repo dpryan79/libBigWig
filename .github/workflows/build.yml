@@ -15,4 +15,7 @@ jobs:
           python-version: 3.8
           auto-activate-base: false
       - run: |
-          make test
+          env
+          CFLAGS="$CFLAGS -g -Wall -O3 -Wsign-compare -L$PREFIX/lib -I$PREFIX/include"
+          LIBS="$LDFLAGS -L$PREFIX/lib -lcurl -lm -lz"
+          make test CC=$CC 
