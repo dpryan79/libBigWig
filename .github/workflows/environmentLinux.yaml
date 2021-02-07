@@ -1,0 +1,9 @@
+channels:
+  - conda-forge
+  - bioconda
+  - default
+requirements:
+  - gcc_linux-64
+  - curl
+  - zlib
+  - python 3.8
