@@ -72,3 +72,4 @@ except:
     p2 = Popen(["md5"], stdin=p1.stdout, stdout=PIPE)
 md5sum = p2.communicate()[0].strip().split()[0]
 assert(md5sum == "33ef99571bdaa8c9130149e99332b17b")
+print("success")

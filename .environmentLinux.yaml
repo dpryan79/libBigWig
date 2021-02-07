@@ -1,0 +1,10 @@
+name: foo
+channels:
+  - conda-forge
+  - bioconda
+  - default
+dependencies:
+  - gcc_linux-64
+  - curl
+  - zlib
+  - python 3.8
