@@ -15,7 +15,7 @@ jobs:
           python-version: 3.8
           auto-activate-base: false
       - run: |
-          env
+          echo "PREFIX is $PREFIX"
           CFLAGS="$CFLAGS -g -Wall -O3 -Wsign-compare -L$PREFIX/lib -I$PREFIX/include"
           LIBS="$LDFLAGS -L$PREFIX/lib -lcurl -lm -lz"
-          make test CC=$CC 
+          make test CC=$CC CFLAGS="$CFLAGS" LIBS="$LIBS"
