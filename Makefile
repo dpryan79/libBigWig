@@ -72,7 +72,7 @@ test/testWrite: libBigWig.a
 	$(CC) -o $@ -I. $(CFLAGS) test/testWrite.c libBigWig.a $(LIBS)
 
 test/exampleWrite: libBigWig.so
-	$(CC) -o $@ -I. -L. $(CFLAGS) test/exampleWrite.c -lBigWig $(LIBS) -Wl,-rpath .
+	$(CC) -o $@ -I. -L. $(CFLAGS) test/exampleWrite.c libBigWig.a $(LIBS)
 
 test/testBigBed: libBigWig.a
 	$(CC) -o $@ -I. $(CFLAGS) test/testBigBed.c libBigWig.a $(LIBS)
@@ -81,7 +81,7 @@ test/testIterator: libBigWig.a
 	$(CC) -o $@ -I. $(CFLAGS) test/testIterator.c libBigWig.a $(LIBS)
 
 test: test/testLocal test/testRemote test/testWrite test/testLocal test/exampleWrite test/testRemoteManyContigs test/testBigBed test/testIterator
-	./test/test.py
+	./test/test.py test test/test.bw
 
 clean:
 	rm -f *.o libBigWig.a libBigWig.so *.pico test/testLocal test/testRemote test/testWrite test/exampleWrite test/testRemoteManyContigs test/testBigBed test/testIterator example_output.bw
