@@ -246,3 +246,5 @@ There are currently two python interfaces that make use of libBigWig: [pyBigWig]
 # Building without remote file access
 
 If you want to compile without remote file access (e.g., you don't have curl installed), then you can append `-DNOCURL` to the `CFLAGS` line in the `Makefile`. You will also need to remove `-lcurl` from the `LIBS` line.
+
+If you are building libBigWig using CMake you can instead pass `-DWITH_CURL=OFF` when calling CMake at configuration time.
