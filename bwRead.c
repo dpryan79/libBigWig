@@ -194,7 +194,7 @@ static uint64_t readChromLeaf(bigWigFile_t *bw, chromList_t *cl, uint32_t valueS
         if(bwRead((void*) chrom, sizeof(char), valueSize, bw) != valueSize) goto error;
         if(bwRead((void*) &idx, sizeof(uint32_t), 1, bw) != 1) goto error;
         if(bwRead((void*) &(cl->len[idx]), sizeof(uint32_t), 1, bw) != 1) goto error;
-        cl->chrom[idx] = strdup(chrom);
+        cl->chrom[idx] = bwStrdup(chrom);
         if(!(cl->chrom[idx])) goto error;
     }
 
@@ -424,4 +424,15 @@ bigWigFile_t *bbOpen(char *fname, CURLcode (*callBack) (CURL*)) {
 error:
     bwClose(bb);
     return NULL;
+}
+
+
+//Implementation taken from musl:
+//https://git.musl-libc.org/cgit/musl/tree/src/string/strdup.c
+//License: https://git.musl-libc.org/cgit/musl/tree/COPYRIGHT
+char* bwStrdup(const char *s) {
+	size_t l = strlen(s);
+	char *d = malloc(l+1);
+	if (!d) return NULL;
+	return memcpy(d, s, l+1);
 }
