@@ -299,7 +299,7 @@ void bwClose(bigWigFile_t *fp) {
     free(fp);
 }
 
-int bwIsBigWig(char *fname, CURLcode (*callBack) (CURL*)) {
+int bwIsBigWig(const char *fname, CURLcode (*callBack) (CURL*)) {
     uint32_t magic = 0;
     URL_t *URL = NULL;
 
@@ -329,7 +329,7 @@ error:
     return NULL;
 }
 
-int bbIsBigBed(char *fname, CURLcode (*callBack) (CURL*)) {
+int bbIsBigBed(const char *fname, CURLcode (*callBack) (CURL*)) {
     uint32_t magic = 0;
     URL_t *URL = NULL;
 
@@ -342,7 +342,7 @@ int bbIsBigBed(char *fname, CURLcode (*callBack) (CURL*)) {
     return 0;
 }
 
-bigWigFile_t *bwOpen(char *fname, CURLcode (*callBack) (CURL*), const char *mode) {
+bigWigFile_t *bwOpen(const char *fname, CURLcode (*callBack) (CURL*), const char *mode) {
     bigWigFile_t *bwg = calloc(1, sizeof(bigWigFile_t));
     if(!bwg) {
         fprintf(stderr, "[bwOpen] Couldn't allocate space to create the output object!\n");
@@ -394,7 +394,7 @@ error:
     return NULL;
 }
 
-bigWigFile_t *bbOpen(char *fname, CURLcode (*callBack) (CURL*)) {
+bigWigFile_t *bbOpen(const char *fname, CURLcode (*callBack) (CURL*)) {
     bigWigFile_t *bb = calloc(1, sizeof(bigWigFile_t));
     if(!bb) {
         fprintf(stderr, "[bbOpen] Couldn't allocate space to create the output object!\n");

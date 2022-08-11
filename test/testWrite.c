@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
     }
 
     if(bwCreateHdr(ofp, 10)) goto error; //ten zoom levels
-    ofp->cl = bwCreateChromList(ifp->cl->chrom, ifp->cl->len, ifp->cl->nKeys);
+    ofp->cl = bwCreateChromList((const char* const*)ifp->cl->chrom, ifp->cl->len, ifp->cl->nKeys);
     if(!ofp->cl) goto error;
 
     if(bwWriteHdr(ofp)) goto error;
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
             chroms = malloc(o->l * sizeof(char*));
             if(!chroms) goto error;
             for(i=0; i<o->l; i++) chroms[i] = ofp->cl->chrom[tid];
-            bwAddIntervals(ofp, chroms, o->start, o->end, o->value, o->l);
+            bwAddIntervals(ofp, (const char* const*)chroms, o->start, o->end, o->value, o->l);
             free(chroms);
         }
         bwDestroyOverlappingIntervals(o);
