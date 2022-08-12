@@ -32,7 +32,7 @@ chromList_t *bwCreateChromList(char **chroms, uint32_t *lengths, int64_t n) {
 
     for(i=0; i<n; i++) {
         cl->len[i] = lengths[i];
-        cl->chrom[i] = strdup(chroms[i]);
+        cl->chrom[i] = bwStrdup(chroms[i]);
         if(!cl->chrom[i]) goto error;
     }
 

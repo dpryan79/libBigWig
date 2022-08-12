@@ -379,7 +379,7 @@ static bbOverlappingEntries_t *pushBBIntervals(bbOverlappingEntries_t *o, uint32
     }
     o->start[o->l] = start;
     o->end[o->l] = end;
-    if(withString) o->str[o->l] = strdup(str);
+    if(withString) o->str[o->l] = bwStrdup(str);
     o->l++;
     return o;
 
