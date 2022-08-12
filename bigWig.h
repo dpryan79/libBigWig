@@ -314,10 +314,10 @@ bigWigFile_t *bbOpen(const char *fname, CURLcode (*callBack)(CURL*));
  * The "auto SQL" field contains the names and value types of the entries in
  * each bigBed entry. If you need to parse a particular value out of each entry,
  * then you'll need to first parse this.
- * @param bw The file pointer to a valid bigWigFile_t
+ * @param fp The file pointer to a valid bigWigFile_t
  * @return A char *, which you MUST free!
  */
-char *bbGetSQL(bigWigFile_t *bw);
+char *bbGetSQL(bigWigFile_t *fp);
 
 /*!
  * @brief Closes a bigWigFile_t and frees up allocated memory
@@ -387,7 +387,7 @@ bbOverlappingEntries_t *bbGetOverlappingEntries(bigWigFile_t *fp, const char *ch
  * @brief Creates an iterator over intervals in a bigWig file
  * Iterators can be traversed with `bwIteratorNext()` and destroyed with `bwIteratorDestroy()`.
  * Intervals are in the `intervals` member and `data` can be used to determine when to end iteration.
- * @param bw A valid bigWigFile_t pointer. This MUST be for a bigWig file!
+ * @param fp A valid bigWigFile_t pointer. This MUST be for a bigWig file!
  * @param chrom A valid chromosome name.
  * @param start The start position of the interval. This is 0-based half open, so 0 is the first base.
  * @param end The end position of the interval. Again, this is 0-based half open, so 100 will include the 100th base...which is at position 99.
@@ -397,13 +397,13 @@ bbOverlappingEntries_t *bbGetOverlappingEntries(bigWigFile_t *fp, const char *ch
  * @see bwIteratorNext
  * @see bwIteratorDestroy
  */ 
-bwOverlapIterator_t *bwOverlappingIntervalsIterator(bigWigFile_t *bw, const char *chrom, uint32_t start, uint32_t end, uint32_t blocksPerIteration);
+bwOverlapIterator_t *bwOverlappingIntervalsIterator(bigWigFile_t *fp, const char *chrom, uint32_t start, uint32_t end, uint32_t blocksPerIteration);
 
 /*!
  * @brief Creates an iterator over entries in a bigBed file
  * Iterators can be traversed with `bwIteratorNext()` and destroyed with `bwIteratorDestroy()`.
  * Entries are in the `entries` member and `data` can be used to determine when to end iteration.
- * @param bw A valid bigWigFile_t pointer. This MUST be for a bigBed file!
+ * @param fp A valid bigWigFile_t pointer. This MUST be for a bigBed file!
  * @param chrom A valid chromosome name.
  * @param start The start position of the interval. This is 0-based half open, so 0 is the first base.
  * @param end The end position of the interval. Again, this is 0-based half open, so 100 will include the 100th base...which is at position 99.
@@ -415,7 +415,7 @@ bwOverlapIterator_t *bwOverlappingIntervalsIterator(bigWigFile_t *bw, const char
  * @see bwIteratorNext
  * @see bwIteratorDestroy
  */ 
-bwOverlapIterator_t *bbOverlappingEntriesIterator(bigWigFile_t *bw, const char *chrom, uint32_t start, uint32_t end, int withString, uint32_t blocksPerIteration);
+bwOverlapIterator_t *bbOverlappingEntriesIterator(bigWigFile_t *fp, const char *chrom, uint32_t start, uint32_t end, int withString, uint32_t blocksPerIteration);
 
 /*!
  * @brief Traverses to the entries/intervals in the next group of blocks.
@@ -435,7 +435,7 @@ void bwIteratorDestroy(bwOverlapIterator_t *iter);
 /*!
  * @brief Return all per-base bigWig values in a given interval.
  * Given an interval (e.g., chr1:0-100), return the value at each position in a bigWig file. Positions without associated values are suppressed by default, but may be returned if `includeNA` is not 0.
- * @param bw A valid bigWigFile_t pointer.
+ * @param fp A valid bigWigFile_t pointer.
  * @param chrom A valid chromosome name.
  * @param start The start position of the interval. This is 0-based half open, so 0 is the first base.
  * @param end The end position of the interval. Again, this is 0-based half open, so 100 will include the 100th base...which is at position 99.
@@ -445,7 +445,7 @@ void bwIteratorDestroy(bwOverlapIterator_t *iter);
  * @see bwDestroyOverlappingIntervals
  * @see bwGetOverlappingIntervals
  */
-bwOverlappingIntervals_t *bwGetValues(bigWigFile_t *bw, const char *chrom, uint32_t start, uint32_t end, int includeNA);
+bwOverlappingIntervals_t *bwGetValues(bigWigFile_t *fp, const char *chrom, uint32_t start, uint32_t end, int includeNA);
 
 /*!
  * @brief Determines per-interval bigWig statistics
