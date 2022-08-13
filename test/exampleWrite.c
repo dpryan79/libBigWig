@@ -2,8 +2,8 @@
 
 int main(int argc, char *argv[]) {
     bigWigFile_t *fp = NULL;
-    char *chroms[] = {"1", "2"};
-    char *chromsUse[] = {"1", "1", "1"};
+    const char *chroms[] = {"1", "2"};
+    const char *chromsUse[] = {"1", "1", "1"};
     uint32_t chrLens[] = {1000000, 1500000};
     uint32_t starts[] = {0, 100, 125,
                          200, 220, 230,

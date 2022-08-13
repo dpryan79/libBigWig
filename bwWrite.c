@@ -19,7 +19,7 @@ struct val_t {
 
 //Create a chromList_t and attach it to a bigWigFile_t *. Returns NULL on error
 //Note that chroms and lengths are duplicated, so you MUST free the input
-chromList_t *bwCreateChromList(char **chroms, uint32_t *lengths, int64_t n) {
+chromList_t *bwCreateChromList(const char* const* chroms, const uint32_t *lengths, int64_t n) {
     int64_t i = 0;
     chromList_t *cl = calloc(1, sizeof(chromList_t));
     if(!cl) return NULL;
@@ -371,9 +371,9 @@ static void updateStats(bigWigFile_t *fp, uint32_t span, float val) {
 }
 
 //12 bytes per entry
-int bwAddIntervals(bigWigFile_t *fp, char **chrom, uint32_t *start, uint32_t *end, float *values, uint32_t n) {
+int bwAddIntervals(bigWigFile_t *fp, const char* const* chrom, const uint32_t *start, const uint32_t *end, const float *values, uint32_t n) {
     uint32_t tid = 0, i;
-    char *lastChrom = NULL;
+    const char *lastChrom = NULL;
     bwWriteBuffer_t *wb = fp->writeBuffer;
     if(!n) return 0; //Not an error per se
     if(!fp->isWrite) return 1;
@@ -431,7 +431,7 @@ int bwAddIntervals(bigWigFile_t *fp, char **chrom, uint32_t *start, uint32_t *en
     return 0;
 }
 
-int bwAppendIntervals(bigWigFile_t *fp, uint32_t *start, uint32_t *end, float *values, uint32_t n) {
+int bwAppendIntervals(bigWigFile_t *fp, const uint32_t *start, const uint32_t *end, const float *values, uint32_t n) {
     uint32_t i;
     bwWriteBuffer_t *wb = fp->writeBuffer;
     if(!n) return 0;
@@ -459,7 +459,7 @@ int bwAppendIntervals(bigWigFile_t *fp, uint32_t *start, uint32_t *end, float *v
 }
 
 //8 bytes per entry
-int bwAddIntervalSpans(bigWigFile_t *fp, char *chrom, uint32_t *start, uint32_t span, float *values, uint32_t n) {
+int bwAddIntervalSpans(bigWigFile_t *fp, const char *chrom, const uint32_t *start, uint32_t span, const float *values, uint32_t n) {
     uint32_t i, tid;
     bwWriteBuffer_t *wb = fp->writeBuffer;
     if(!n) return 0;
@@ -492,7 +492,7 @@ int bwAddIntervalSpans(bigWigFile_t *fp, char *chrom, uint32_t *start, uint32_t 
     return 0;
 }
 
-int bwAppendIntervalSpans(bigWigFile_t *fp, uint32_t *start, float *values, uint32_t n) {
+int bwAppendIntervalSpans(bigWigFile_t *fp, const uint32_t *start, const float *values, uint32_t n) {
     uint32_t i;
     bwWriteBuffer_t *wb = fp->writeBuffer;
     if(!n) return 0;
@@ -517,7 +517,7 @@ int bwAppendIntervalSpans(bigWigFile_t *fp, uint32_t *start, float *values, uint
 }
 
 //4 bytes per entry
-int bwAddIntervalSpanSteps(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t span, uint32_t step, float *values, uint32_t n) {
+int bwAddIntervalSpanSteps(bigWigFile_t *fp, const char *chrom, uint32_t start, uint32_t span, uint32_t step, const float *values, uint32_t n) {
     uint32_t i, tid;
     bwWriteBuffer_t *wb = fp->writeBuffer;
     if(!n) return 0;
@@ -549,7 +549,7 @@ int bwAddIntervalSpanSteps(bigWigFile_t *fp, char *chrom, uint32_t start, uint32
     return 0;
 }
 
-int bwAppendIntervalSpanSteps(bigWigFile_t *fp, float *values, uint32_t n) {
+int bwAppendIntervalSpanSteps(bigWigFile_t *fp, const float *values, uint32_t n) {
     uint32_t i;
     bwWriteBuffer_t *wb = fp->writeBuffer;
     if(!n) return 0;

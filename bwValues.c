@@ -140,7 +140,7 @@ static bwOverlapBlock_t *overlapsLeaf(bwRTreeNode_t *node, uint32_t tid, uint32_
 
         /*
           The individual blocks can theoretically span multiple contigs.
-          So if we treat the first/last contig in the range as special 
+          So if we treat the first/last contig in the range as special
           but anything in the middle is a guaranteed match
         */
         if(node->chrIdxStart[i] != node->chrIdxEnd[i]) {
@@ -281,7 +281,7 @@ bwOverlapBlock_t *walkRTreeNodes(bigWigFile_t *bw, bwRTreeNode_t *root, uint32_t
 
 //In reality, a hash or some sort of tree structure is probably faster...
 //Return -1 (AKA 0xFFFFFFFF...) on "not there", so we can hold (2^32)-1 items.
-uint32_t bwGetTid(bigWigFile_t *fp, char *chrom) {
+uint32_t bwGetTid(const bigWigFile_t *fp, const char *chrom) {
     uint32_t i;
     if(!chrom) return -1;
     for(i=0; i<fp->cl->nKeys; i++) {
@@ -290,7 +290,7 @@ uint32_t bwGetTid(bigWigFile_t *fp, char *chrom) {
     return -1;
 }
 
-static bwOverlapBlock_t *bwGetOverlappingBlocks(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end) {
+static bwOverlapBlock_t *bwGetOverlappingBlocks(bigWigFile_t *fp, const char *chrom, uint32_t start, uint32_t end) {
     uint32_t tid = bwGetTid(fp, chrom);
 
     if(tid == (uint32_t) -1) {
@@ -437,7 +437,7 @@ bwOverlappingIntervals_t *bwGetOverlappingIntervalsCore(bigWigFile_t *fp, bwOver
         if(hdr.tid != tid) continue;
 
         if(hdr.type == 3) start = hdr.start - hdr.step;
-        
+
         //FIXME: We should ensure that sz is large enough to hold nItems of the given type
         for(j=0; j<hdr.nItems; j++) {
             switch(hdr.type) {
@@ -560,7 +560,7 @@ error:
 }
 
 //Returns NULL on error OR no intervals, which is a bad design...
-bwOverlappingIntervals_t *bwGetOverlappingIntervals(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end) {
+bwOverlappingIntervals_t *bwGetOverlappingIntervals(bigWigFile_t *fp, const char *chrom, uint32_t start, uint32_t end) {
     bwOverlappingIntervals_t *output;
     uint32_t tid = bwGetTid(fp, chrom);
     if(tid == (uint32_t) -1) return NULL;
@@ -572,7 +572,7 @@ bwOverlappingIntervals_t *bwGetOverlappingIntervals(bigWigFile_t *fp, char *chro
 }
 
 //Like above, but for bigBed files
-bbOverlappingEntries_t *bbGetOverlappingEntries(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end, int withString) {
+bbOverlappingEntries_t *bbGetOverlappingEntries(bigWigFile_t *fp, const char *chrom, uint32_t start, uint32_t end, int withString) {
     bbOverlappingEntries_t *output;
     uint32_t tid = bwGetTid(fp, chrom);
     if(tid == (uint32_t) -1) return NULL;
@@ -584,16 +584,16 @@ bbOverlappingEntries_t *bbGetOverlappingEntries(bigWigFile_t *fp, char *chrom, u
 }
 
 //Returns NULL on error
-bwOverlapIterator_t *bwOverlappingIntervalsIterator(bigWigFile_t *bw, char *chrom, uint32_t start, uint32_t end, uint32_t blocksPerIteration) {
+bwOverlapIterator_t *bwOverlappingIntervalsIterator(bigWigFile_t *fp, const char *chrom, uint32_t start, uint32_t end, uint32_t blocksPerIteration) {
     bwOverlapIterator_t *output = NULL;
     uint64_t n;
-    uint32_t tid = bwGetTid(bw, chrom);
+    uint32_t tid = bwGetTid(fp, chrom);
     if(tid == (uint32_t) -1) return output;
     output = calloc(1, sizeof(bwOverlapIterator_t));
     if(!output) return output;
-    bwOverlapBlock_t *blocks = bwGetOverlappingBlocks(bw, chrom, start, end);
+    bwOverlapBlock_t *blocks = bwGetOverlappingBlocks(fp, chrom, start, end);
 
-    output->bw = bw;
+    output->bw = fp;
     output->tid = tid;
     output->start = start;
     output->end = end;
@@ -603,7 +603,7 @@ bwOverlapIterator_t *bwOverlappingIntervalsIterator(bigWigFile_t *bw, char *chro
     if(blocks) {
         n = blocks->n;
         if(n>blocksPerIteration) blocks->n = blocksPerIteration;
-        output->intervals = bwGetOverlappingIntervalsCore(bw, blocks,tid, start, end);
+        output->intervals = bwGetOverlappingIntervalsCore(fp, blocks,tid, start, end);
         blocks->n = n;
         output->offset = blocksPerIteration;
     }
@@ -612,16 +612,16 @@ bwOverlapIterator_t *bwOverlappingIntervalsIterator(bigWigFile_t *bw, char *chro
 }
 
 //Returns NULL on error
-bwOverlapIterator_t *bbOverlappingEntriesIterator(bigWigFile_t *bw, char *chrom, uint32_t start, uint32_t end, int withString, uint32_t blocksPerIteration) {
+bwOverlapIterator_t *bbOverlappingEntriesIterator(bigWigFile_t *fp, const char *chrom, uint32_t start, uint32_t end, int withString, uint32_t blocksPerIteration) {
     bwOverlapIterator_t *output = NULL;
     uint64_t n;
-    uint32_t tid = bwGetTid(bw, chrom);
+    uint32_t tid = bwGetTid(fp, chrom);
     if(tid == (uint32_t) -1) return output;
     output = calloc(1, sizeof(bwOverlapIterator_t));
     if(!output) return output;
-    bwOverlapBlock_t *blocks = bwGetOverlappingBlocks(bw, chrom, start, end);
+    bwOverlapBlock_t *blocks = bwGetOverlappingBlocks(fp, chrom, start, end);
 
-    output->bw = bw;
+    output->bw = fp;
     output->tid = tid;
     output->start = start;
     output->end = end;
@@ -632,7 +632,7 @@ bwOverlapIterator_t *bbOverlappingEntriesIterator(bigWigFile_t *bw, char *chrom,
     if(blocks) {
         n = blocks->n;
         if(n>blocksPerIteration) blocks->n = blocksPerIteration;
-        output->entries = bbGetOverlappingEntriesCore(bw, blocks,tid, start, end, withString);
+        output->entries = bbGetOverlappingEntriesCore(fp, blocks,tid, start, end, withString);
         blocks->n = n;
         output->offset = blocksPerIteration;
     }
@@ -710,7 +710,7 @@ error:
 //The ->end member is NULL
 //If includeNA is not 0 then ->start is also NULL, since it's implied
 //Note that bwDestroyOverlappingIntervals() will work in either case
-bwOverlappingIntervals_t *bwGetValues(bigWigFile_t *fp, char *chrom, uint32_t start, uint32_t end, int includeNA) {
+bwOverlappingIntervals_t *bwGetValues(bigWigFile_t *fp, const char *chrom, uint32_t start, uint32_t end, int includeNA) {
     uint32_t i, j, n;
     bwOverlappingIntervals_t *output = NULL;
     bwOverlappingIntervals_t *intermediate = bwGetOverlappingIntervals(fp, chrom, start, end);
