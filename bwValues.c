@@ -135,8 +135,7 @@ static bwOverlapBlock_t *overlapsLeaf(bwRTreeNode_t *node, uint32_t tid, uint32_
     if(!o) return NULL;
 
     for(i=0; i<node->nChildren; i++) {
-        if(tid < node->chrIdxStart[i]) break;
-        if(tid > node->chrIdxEnd[i]) continue;
+        if(tid < node->chrIdxStart[i] || tid > node->chrIdxEnd[i]) continue;
 
         /*
           The individual blocks can theoretically span multiple contigs.
@@ -162,7 +161,6 @@ static bwOverlapBlock_t *overlapsLeaf(bwRTreeNode_t *node, uint32_t tid, uint32_
         if(!o->size) goto error;
 
         for(i=0; i<node->nChildren; i++) {
-            if(tid < node->chrIdxStart[i]) break;
             if(tid < node->chrIdxStart[i] || tid > node->chrIdxEnd[i]) continue;
             if(node->chrIdxStart[i] != node->chrIdxEnd[i]) {
                 if(tid == node->chrIdxStart[i]) {
