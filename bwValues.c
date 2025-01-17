@@ -524,15 +524,15 @@ bbOverlappingEntries_t *bbGetOverlappingEntriesCore(bigWigFile_t *fp, bwOverlapB
             tmp = o->size[i]; //TODO: Is this correct? Do non-gzipped bigBeds exist?
         }
 
-        bufEnd = buf + tmp;
+        bufEnd = (char*)buf + tmp;
         while(buf < bufEnd) {
             entryTid = ((uint32_t*)buf)[0];
             start = ((uint32_t*)buf)[1];
             end = ((uint32_t*)buf)[2];
-            buf += 12;
+            buf = (char*)buf + 12;
             str = (char*)buf;
             slen = strlen(str) + 1;
-            buf += slen;
+            buf = (char*)buf + slen;
 
             if(entryTid < tid) continue;
             if(entryTid > tid) break;
@@ -543,7 +543,7 @@ bbOverlappingEntries_t *bbGetOverlappingEntriesCore(bigWigFile_t *fp, bwOverlapB
             if(!pushBBIntervals(output, start, end, str, withString)) goto error;
         }
 
-        buf = bufEnd - tmp; //reset the buffer pointer
+        buf = (char*)bufEnd - tmp; //reset the buffer pointer
     }
 
     if(compressed && buf) free(buf);
@@ -552,7 +552,7 @@ bbOverlappingEntries_t *bbGetOverlappingEntriesCore(bigWigFile_t *fp, bwOverlapB
 
 error:
     fprintf(stderr, "[bbGetOverlappingEntriesCore] Got an error\n");
-    buf = bufEnd - tmp;
+    buf = (char*)bufEnd - tmp;
     if(output) bbDestroyOverlappingEntries(output);
     if(compressed && buf) free(buf);
     if(compBuf) free(compBuf);
