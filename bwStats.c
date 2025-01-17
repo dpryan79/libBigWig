@@ -70,7 +70,7 @@ static struct vals_t *getVals(bigWigFile_t *fp, bwOverlapBlock_t *o, int i, uint
 
     if(sz) {
         compressed = 1;
-        buf = malloc(sz); 
+        buf = malloc(sz);
     }
     sz = 0; //This is now the size of the compressed buffer
 
@@ -96,7 +96,7 @@ static struct vals_t *getVals(bigWigFile_t *fp, bwOverlapBlock_t *o, int i, uint
     }
 
     p = buf;
-    while(((uLongf) ((void*)p-buf)) < sz) {
+    while(((uLongf) ((char*)p - (char*)buf)) < sz) {
         vtid = p[0];
         vstart = p[1];
         vend = p[2];
