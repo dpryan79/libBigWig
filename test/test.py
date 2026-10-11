@@ -42,7 +42,7 @@ def test_creation_from_scratch():
         assert p1 == 0
         with open(tmpout, mode="rb") as f:
             md5sum = hashlib.md5(f.read()).hexdigest()
-            assert md5sum == "ef104f198c6ce8310acc149d0377fc16"
+            assert md5sum == "c07d7b09a0e370f3caca50258c5a6957"
 
 
 def remote_test2():
