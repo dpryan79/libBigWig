@@ -917,11 +917,11 @@ uint32_t overlapsInterval(uint32_t tid0, uint32_t start0, uint32_t end0, uint32_
 
 //Returns the number of bases of the interval written
 uint32_t updateInterval(bigWigFile_t *fp, bwZoomBuffer_t *buffer, double *sum, double *sumsq, uint32_t size, uint32_t tid, uint32_t start, uint32_t end, float value) {
-    uint32_t *p2 = (uint32_t*) buffer->p;
-    float *fp2 = (float*) p2;
-    uint32_t rv = 0, offset = 0;
+    uint32_t *p2, rv = 0, offset = 0;
+    float *fp2;
     if(!buffer) return 0;
-    if(buffer->l+32 >= buffer->m) return 0;
+    p2 = (uint32_t*) buffer->p;
+    fp2 = (float*) p2;
 
     //Make sure that we don't overflow a uint32_t by adding some huge value to start
     if(start + size < start) size = ((uint32_t) -1) - start;
@@ -953,6 +953,9 @@ uint32_t updateInterval(bigWigFile_t *fp, bwZoomBuffer_t *buffer, double *sum, d
             *sumsq = 0.0;
         }
     }
+
+    //Check for space only after finishing the previous entry, otherwise a full buffer's last entry is never finished
+    if(buffer->l+32 >= buffer->m) return 0;
 
     //If we move to a new interval then skip iterating over a bunch of obviously non-overlapping intervals
     if(offset && p2[8*offset+2] == 0) {
@@ -1040,7 +1043,18 @@ int constructZoomLevels(bigWigFile_t *fp) {
 	  it = bwIteratorNext(it);
 	}
 	bwIteratorDestroy(it);
+	it = NULL;
 
+    }
+
+    //Finish the last entry of each level, since nothing follows it to do so in updateInterval()
+    for(k=0; k<fp->hdr->nLevels; k++) {
+        bwZoomBuffer_t *zb = fp->writeBuffer->lastZoomBuffer[k];
+        if(zb->l >= 32) {
+            float *fp2 = (float*) zb->p;
+            fp2[8*(zb->l/32-1)+6] = sum[k];
+            fp2[8*(zb->l/32-1)+7] = sumsq[k];
+        }
     }
 
     //Make an index for each zoom level
@@ -1081,6 +1095,7 @@ int writeZoomLevels(bigWigFile_t *fp) {
             if(fp->writeBuffer->nNodes[i] == fp->writeBuffer->nNodes[i-1]) break;
         }
         actualNLevels++;
+        idxSize = 0; //This used to carry over between levels
 
         //reserve a uint32_t for the number of blocks
         fp->hdr->zoomHdrs->dataOffset[i] = bwTell(fp);
