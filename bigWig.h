@@ -175,6 +175,8 @@ struct bwZoomBuffer_t { //each individual entry takes 32 bytes
     void *p;
     uint32_t l, m;
     struct bwZoomBuffer_t *next;
+    //Full buffers are compressed in place (m = 0); these keep the first/last entry coordinates for the index
+    uint32_t tid0, start0, tid1, end1;
 };
 /// @endcond
 

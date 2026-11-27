@@ -980,6 +980,31 @@ uint32_t updateInterval(bigWigFile_t *fp, bwZoomBuffer_t *buffer, double *sum, d
     return rv;
 }
 
+//Compress a finished zoom buffer in place so only the compressed block stays in memory. Returns 0 on success.
+static int compressZoomBuffer(bigWigFile_t *fp, bwZoomBuffer_t *zb) {
+    uLongf sz = fp->writeBuffer->compressPsz;
+    uint32_t *p = (uint32_t*) zb->p, last;
+    void *c;
+    if(!zb->m) return 0; //Already compressed
+    if(zb->l < 32) return 1;
+
+    last = (zb->l - 32)>>2;
+    zb->tid0 = p[0];
+    zb->start0 = p[1];
+    zb->tid1 = p[last];
+    zb->end1 = p[last+2];
+
+    if(compress(fp->writeBuffer->compressP, &sz, zb->p, zb->l) != Z_OK) return 2;
+    c = malloc(sz);
+    if(!c) return 3;
+    memcpy(c, fp->writeBuffer->compressP, sz);
+    free(zb->p);
+    zb->p = c;
+    zb->l = sz;
+    zb->m = 0;
+    return 0;
+}
+
 //Returns 0 on success
 int addIntervalValue(bigWigFile_t *fp, uint64_t *nEntries, double *sum, double *sumsq, bwZoomBuffer_t *buffer, uint32_t itemsPerSlot, uint32_t zoom, uint32_t tid, uint32_t start, uint32_t end, float value) {
     bwZoomBuffer_t *newBuffer = NULL;
@@ -1000,6 +1025,8 @@ int addIntervalValue(bigWigFile_t *fp, uint64_t *nEntries, double *sum, double *
             *sum = *sumsq = 0.0;
             rv = updateInterval(fp, newBuffer, sum, sumsq, zoom, tid, start, end, value);
             if(!rv) goto error;
+            //The old buffer is finished, nothing else will be added to it
+            if(compressZoomBuffer(fp, buffer)) goto error;
             buffer->next = newBuffer;
             buffer = buffer->next;
             *nEntries += 1;
@@ -1017,6 +1044,9 @@ error:
     return 2;
 }
 
+//Data blocks decompressed at a time when building zoom levels (was 100000, i.e. a whole chromosome).
+#define ZOOM_BLOCKS_PER_ITERATION 64
+
 //Get all of the intervals and add them to the appropriate zoomBuffer
 int constructZoomLevels(bigWigFile_t *fp) {
     bwOverlapIterator_t *it = NULL;
@@ -1028,7 +1058,7 @@ int constructZoomLevels(bigWigFile_t *fp) {
     if(!sum || !sumsq) goto error;
 
     for(i=0; i<fp->cl->nKeys; i++) {
-        it = bwOverlappingIntervalsIterator(fp, fp->cl->chrom[i], 0, fp->cl->len[i], 100000);
+        it = bwOverlappingIntervalsIterator(fp, fp->cl->chrom[i], 0, fp->cl->len[i], ZOOM_BLOCKS_PER_ITERATION);
         if(!it) goto error;
 	while(it->data != NULL){
 	  for(j=0;j<it->intervals->l;j++){
@@ -1065,7 +1095,7 @@ error:
 
 int writeZoomLevels(bigWigFile_t *fp) {
     uint64_t offset1, offset2, idxSize = 0;
-    uint32_t i, j, four = 0, last, vector[6] = {0, 0, 0, 0, 0, 0}; //The last 8 bytes are left as 0;
+    uint32_t i, j, four = 0, vector[6] = {0, 0, 0, 0, 0, 0}; //The last 8 bytes are left as 0;
     uint8_t wrote, one = 0;
     uint16_t actualNLevels = 0;
     int rv;
@@ -1091,15 +1121,15 @@ int writeZoomLevels(bigWigFile_t *fp) {
         fp->writeBuffer->firstIndexNode = NULL;
         fp->writeBuffer->currentIndexNode = NULL;
         while(zb) {
-            sz = fp->hdr->bufSize;
-            if(compress(wb->compressP, &sz, zb->p, zb->l) != Z_OK) return 2;
+            //Full buffers were compressed in addIntervalValue(), this handles the last one of each level
+            if(compressZoomBuffer(fp, zb)) return 2;
+            sz = zb->l;
 
             //write the data to disk
-            if(fwrite(wb->compressP, sizeof(uint8_t), sz, fp->URL->x.fp) != sz) return 3;
+            if(fwrite(zb->p, sizeof(uint8_t), sz, fp->URL->x.fp) != sz) return 3;
 
             //Add an entry into the index
-            last = (zb->l - 32)>>2;
-            if(addIndexEntry(fp, ((uint32_t*)zb->p)[0], ((uint32_t*)zb->p)[last], ((uint32_t*)zb->p)[1], ((uint32_t*)zb->p)[last+2], bwTell(fp)-sz, sz)) return 4;
+            if(addIndexEntry(fp, zb->tid0, zb->tid1, zb->start0, zb->end1, bwTell(fp)-sz, sz)) return 4;
 
             wb->nBlocks++;
             wb->l = 24;
