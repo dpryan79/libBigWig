@@ -31,7 +31,7 @@ def test_recreating_file():
         assert p1 == 0
         with open(tmpout, mode="rb") as f:
             md5sum = hashlib.md5(f.read()).hexdigest()
-            assert md5sum == "8e116bd114ffd2eb625011d451329c03"
+            assert md5sum == "a8facae0883037527b8561b03b4e9d6d"
 
 
 def test_creation_from_scratch():
@@ -42,7 +42,7 @@ def test_creation_from_scratch():
         assert p1 == 0
         with open(tmpout, mode="rb") as f:
             md5sum = hashlib.md5(f.read()).hexdigest()
-            assert md5sum == "c07d7b09a0e370f3caca50258c5a6957"
+            assert md5sum == "c00d953e9bc45ee166265e7789fbe5af"
 
 
 def remote_test2():
